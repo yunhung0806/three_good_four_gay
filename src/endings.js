@@ -1,0 +1,28 @@
+/* Thirteen main conclusions plus story-specific epilogues. First matching condition wins. */
+const ENDING_RULES=[
+ {id:'beacon',title:'滿街燈火',when:m=>m.kindness>=9&&m.community>=4&&m.principles>=6,text:'咖啡館成了居民互助的起點。你不必在場，善意也會沿著小鎮的關係繼續前進。'},
+ {id:'archive',title:'記憶的守望者',when:m=>m.clues>=7&&m.after>=3,text:'你聽過許多人不願輕易說出的往事，也陪他們把故事帶進新的日子。'},
+ {id:'commons',title:'一起生活的小鎮',when:m=>m.after>=4&&m.community>=2,text:'幾件事情有了後續，居民開始互相商量與分擔，小鎮逐漸有了自己的節奏。'},
+ {id:'table',title:'分享的餐桌',when:m=>m.flags['bread-after']?.success&&m.coffee>=4&&m.kindness>=4,text:'麵包店與咖啡館的門口，總有人留下可以分享的食物與話語。'},
+ {id:'letter',title:'寄出的信',when:m=>m.flags['rain-after']?.success&&m.kindness>=3,text:'許浩終於寄出那封信。雨仍會來，但他知道自己可以向人開口。'},
+ {id:'study',title:'重新寫下答案',when:m=>m.flags['exam-after']?.success&&m.kindness>=3,text:'子寧不再只看考卷上的分數，也開始陪其他同學找自己的步調。'},
+ {id:'garden',title:'長椅上的約定',when:m=>m.flags['bench-after']?.success,text:'修好的長椅成了公園的約定地點；熟人與陌生人都願意坐一會兒。'},
+ {id:'notice',title:'街角留言板',when:m=>m.flags['neighbors-after']?.success,text:'美玲的留言板漸漸貼滿便條，小小的求助與回應讓鄰里重新熟悉。'},
+ {id:'home',title:'微光的日常',when:m=>m.coffee>=8&&m.money>=70,text:'你把咖啡館照顧得很好。穩定的日常，讓來客知道總有一盞燈為他們亮著。'},
+ {id:'friends',title:'熟悉的名字',when:m=>m.met>=5&&m.kindness>=3,text:'七天裡，你記住了許多人的名字；他們也開始把你當作小鎮的一員。'},
+ {id:'cafe',title:'一杯又一杯',when:m=>m.coffee>=4,text:'咖啡館重新有了固定的香氣。故事尚未全數展開，但門每天都會打開。'},
+ {id:'ripple',title:'溫柔的漣漪',when:m=>m.kindness>=2,text:'幾個選擇已在他人的生活裡留下痕跡，往後仍有機會生出新的連結。'},
+ {id:'dawn',title:'下一個清晨',when:()=>true,text:'這一週沒有照預想的方式發展。小鎮仍然生活著，你也可以在下一個清晨重新開始。'}
+];
+function endingMetrics(state){const flags=state.storyFlags||{};return {flags,kindness:state.kindness||0,community:state.community||0,principles:(state.principles||[]).length,clues:(state.memoryClues||[]).length,after:Object.keys(flags).filter(id=>id.endsWith('-after')).length,coffee:state.coffeeServed||0,money:state.money||0,met:(state.met||[]).length}}
+const ENDING_NAMES={ning:'子寧',yu:'雨柔',an:'陳安',mei:'美玲',hao:'許浩',gran:'周奶奶'};
+const ENDING_EFFECTS={'雨天借傘':'許浩不必獨自在雨中趕路','雨後的回信':'許浩終於寄出那封信','剩食分享':'雨柔開始把剩餘麵包送到需要的人手中','鄰里的餐桌':'居民在店門前建立分享餐桌','考卷上的紅字':'子寧願意把錯題當成下一步的線索','重新寫下的答案':'子寧開始陪其他同學練習','不能坐的長椅':'陳安先讓長椅安全地等待修復','長椅旁的新朋友':'公園長椅成了居民相識的地方','街角的爭執':'美玲重新聽見兩位居民各自的需要','重新打開的門':'美玲的留言板開始接住求助與回應','一起整理錯題':'子寧看見自己能練習的下一步','規劃剩食分享':'雨柔寫下更穩妥的分享方法','檢查公園長椅':'陳安找到需要修理的位置','寫下社區公告':'美玲把互助消息貼到了店門口','聽見疲憊':'許浩願意說出工作帶來的疲憊','整理小鎮舊照':'周奶奶把小鎮往事分享給年輕居民'};
+function endingImpact(state){const links=state.links||[],records=(state.events||[]).filter(e=>e.choice&&e.owner),ranked=[...records].sort((a,b)=>{const score=e=>(links.some(l=>l.origin===e.id&&l.from===e.owner)?4:0)+(e.success?2:0)+(e.title.endsWith('後續')?1:0);return score(b)-score(a)||a.day-b.day}).slice(0,4).sort((a,b)=>a.day-b.day),lines=[];for(const event of ranked){const name=ENDING_NAMES[event.owner]||'那位居民',downstream=links.find(l=>l.origin===event.id&&l.from===event.owner&&l.to!==event.owner);let consequence;if(!links.some(l=>l.origin===event.id&&l.from==='player'))consequence=`${name}仍在依自己的方式前進`;else if(event.success)consequence=ENDING_EFFECTS[event.title]||`${name}有機會重新處理這件事`;else consequence=`${name}還需要時間，但記得你願意伸出手`;let line=`第 ${event.day} 天，你在「${event.title}」選擇「${event.choice}」，${consequence}。`;if(downstream)line+=`${name}後來也把幫助傳給${ENDING_NAMES[downstream.to]||'另一位居民'}。`;lines.push(line)}if(!lines.length)lines.push((state.coffeeServed||0)>0?`你做了 ${state.coffeeServed} 杯咖啡，讓咖啡館重新成為可以停下腳步的地方。`:'這七天你觀察了小鎮的生活；有些改變仍在下一個清晨等著你。');return lines}
+function storyEnding(state){const m=endingMetrics(state),rule=ENDING_RULES.find(item=>item.when(m)),epilogues=[];for(const [root,good,bad] of [
+ ['rain','許浩記得雨天有人陪他走過車站。','許浩仍在練習向人開口。'],
+ ['bread','雨柔找到讓麵包繼續溫暖別人的方法。','雨柔還在尋找適合店裡的分享方式。'],
+ ['exam','子寧願意把錯題當成下一次練習的起點。','子寧仍需要時間面對那張考卷。'],
+ ['bench','陳安修好的長椅重新迎來居民。','陳安仍在為長椅尋找安全的修復方式。'],
+ ['neighbors','美玲的店成了居民願意開口的地方。','美玲還在嘗試讓爭執變成對話。']])if(m.flags[root])epilogues.push((m.flags[`${root}-after`]?.success??m.flags[root].success)?good:bad);if(m.clues>=6)epilogues.push('那些被允許進入的記憶，讓你更懂得每個選擇背後的人。');return {id:rule.id,title:rule.title,text:rule.text,impact:endingImpact(state),epilogues,metrics:m}}
+function endingTestState(id){const base={kindness:0,community:0,principles:[],memoryClues:[],storyFlags:{},coffeeServed:0,money:20,met:[]},p=Array.from({length:7},(_,i)=>`p${i}`),clues=Array.from({length:8},(_,i)=>`c${i}`),met=['ning','yu','an','mei','hao','gran'];switch(id){case'beacon':return {...base,kindness:9,community:4,principles:p};case'archive':return {...base,memoryClues:clues,storyFlags:{'rain-after':{},'bread-after':{},'exam-after':{}}};case'commons':return {...base,community:2,storyFlags:{'rain-after':{},'bread-after':{},'exam-after':{},'bench-after':{}}};case'table':return {...base,kindness:4,coffeeServed:4,storyFlags:{'bread-after':{success:true}}};case'letter':return {...base,kindness:3,storyFlags:{rain:{success:true},'rain-after':{success:true}},events:[{id:'sample-1',day:1,title:'雨天借傘',choice:'借出自己的傘，陪他走到車站',owner:'hao',success:true},{id:'sample-2',day:2,title:'雨後的回信',choice:'陪他確認想說的話',owner:'hao',success:true}],links:[{from:'player',to:'hao',origin:'sample-1'},{from:'hao',to:'yu',origin:'sample-1'},{from:'player',to:'hao',origin:'sample-2'}]};case'study':return {...base,kindness:3,storyFlags:{'exam-after':{success:true}}};case'garden':return {...base,storyFlags:{'bench-after':{success:true}}};case'notice':return {...base,storyFlags:{'neighbors-after':{success:true}}};case'home':return {...base,coffeeServed:8,money:70};case'friends':return {...base,met,kindness:3};case'cafe':return {...base,coffeeServed:4};case'ripple':return {...base,kindness:2};default:return base}}
+window.LUMINA_ENDINGS={rules:ENDING_RULES,storyEnding,endingMetrics,endingImpact,endingTestState};
