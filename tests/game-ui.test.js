@@ -16,11 +16,11 @@ function boot(options={}){
   const data=options.storage||new Map(),fetchImpl=options.fetch||(async path=>({json:async()=>path==='/api/config'?{mode:'離線備援'}:{mode:'離線備援',intent:'talk',emotion:'neutral',reply:'我聽見了。'}}));
   const context={document,location:{search:options.search??'?test=1'},URLSearchParams,localStorage:{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)},fetch:fetchImpl,requestAnimationFrame(){},confirm:()=>true};
   context.window=context;vm.createContext(context);
-  for(const file of ['src/world.js','src/story.js','src/npc-actions.js','src/endings.js','src/offline.js','game.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context,{filename:file});
+  for(const file of ['src/world.js','src/story.js','src/npc-actions.js','src/endings.js','src/offline.js','src/tilemap.js','game.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context,{filename:file});
   return {context,ids,elements};
 }
 test('game boots, shows a story marker, and records an NPC memory through the scene flow',()=>{
-  const {context,ids,elements}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');
+  const {context,ids,elements}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');assert.equal(ids.get('map').children[0].tagName,'CANVAS');
   vm.runInContext("enter('cafe')",context);assert.equal(ids.get('sceneName').textContent,'微光咖啡館');
   assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'雨天借傘');
   vm.runInContext("openChoiceEvent('rain')",context);assert.equal(ids.get('speaker').textContent,'雨天借傘');
@@ -29,28 +29,29 @@ test('game boots, shows a story marker, and records an NPC memory through the sc
 });
 test('returning from a house appears where the player entered it',()=>{
   const {context}=boot();
-  vm.runInContext("state.x=69;state.y=32;interact({id:'school',name:'學校',type:'object',x:71,y:28})",context);
+  vm.runInContext("state.x=71;state.y=40;interact({id:'school',name:'學校',type:'object',x:71,y:37})",context);
   vm.runInContext("interact(objects().find(o=>o.name==='回到街道'))",context);
   assert.equal(vm.runInContext('state.scene',context),'town');
-  assert.ok(Math.abs(vm.runInContext('state.x',context)-71)<8);
-  assert.ok(Math.abs(vm.runInContext('state.y',context)-28)<8);
+  assert.equal(vm.runInContext('state.x',context),71);
+  assert.equal(vm.runInContext('state.y',context),40);
 });
-test('returning to a blocked door nudges the player to a walkable spot',()=>{
+test('returning to an old blocked door uses that building entrance',()=>{
   const {context}=boot();
-  vm.runInContext("state.x=72;state.y=72;interact({id:'park',name:'公園',type:'object',x:78,y:79});interact(objects().find(o=>o.name==='回到街道'))",context);
+  vm.runInContext("state.x=71;state.y=28;interact({id:'school',name:'學校',type:'object',x:71,y:37});interact(objects().find(o=>o.name==='回到街道'))",context);
   assert.equal(vm.runInContext('state.scene',context),'town');
   assert.equal(vm.runInContext('walkable(state.x,state.y)',context),true);
+  assert.equal(vm.runInContext('state.y',context),40);
 });
 test('player can walk away immediately after returning to a door',()=>{
   const {context}=boot();
-  vm.runInContext("state.x=69;state.y=32;interact({id:'school',name:'學校',type:'object',x:71,y:28});interact(objects().find(o=>o.name==='回到街道'))",context);
+  vm.runInContext("state.x=71;state.y=40;interact({id:'school',name:'學校',type:'object',x:71,y:37});interact(objects().find(o=>o.name==='回到街道'))",context);
   const before=vm.runInContext('state.y',context);
-  vm.runInContext("keys.add('s');loop(1000)",context);
+  vm.runInContext("keys.add('s');loop(1000);loop(1016)",context);
   assert.ok(vm.runInContext('state.y',context)>before);
 });
 test('memory return keeps the house door available afterward',()=>{
   const {context}=boot();
-  vm.runInContext("state.x=71;state.y=28;enter('school');state.x=42;state.y=35;enterDialogueMemory('ning','好')",context);
+  vm.runInContext("state.x=71;state.y=40;enter('school');state.x=42;state.y=35;enterDialogueMemory('ning','好')",context);
   vm.runInContext('close()',context);
   vm.runInContext("interact({id:'back',name:'回到現實',type:'object'})",context);
   assert.equal(vm.runInContext('state.scene',context),'school');
@@ -59,7 +60,39 @@ test('memory return keeps the house door available afterward',()=>{
   vm.runInContext("interact(objects().find(o=>o.name==='回到街道'))",context);
   assert.equal(vm.runInContext('state.scene',context),'town');
   assert.ok(Math.abs(vm.runInContext('state.x',context)-71)<8);
-  assert.ok(Math.abs(vm.runInContext('state.y',context)-28)<8);
+  assert.equal(vm.runInContext('state.y',context),40);
+});
+test('town markers are walkable and E enters the intended scene',()=>{
+  const {context}=boot();
+  for(const id of ['cafe','school','bakery','shop','park']){
+    assert.equal(vm.runInContext(`(()=>{const o=scenes.town.objects.find(o=>o[0]==='${id}');return walkable(o[3],o[4])})()`,context),true);
+    vm.runInContext(`(()=>{const o=scenes.town.objects.find(o=>o[0]==='${id}');state.scene='town';state.x=o[3];state.y=o[4]})()`,context);
+    assert.equal(vm.runInContext('nearest()?.id',context),id);
+    vm.runInContext('interact()',context);
+    assert.equal(vm.runInContext('state.scene',context),id);
+    vm.runInContext('leave()',context);
+    assert.equal(vm.runInContext('state.scene',context),'town');
+  }
+  for(const [id,x,y] of [['bakery',87,69],['park',72,76]]){
+    vm.runInContext(`state.scene='town';state.x=${x};state.y=${y}`,context);
+    assert.equal(vm.runInContext('nearest()?.id',context),id);
+  }
+});
+test('an indoor save from the earlier map returns to its saved town position',()=>{
+  const storage=new Map([['lumina-cafe-v2',JSON.stringify({scene:'school',townReturn:{scene:'school',x:72,y:42}})]]);
+  const {context}=boot({storage});
+  vm.runInContext("interact(objects().find(o=>o.id==='town'))",context);
+  assert.equal(vm.runInContext('state.scene',context),'town');
+  assert.equal(vm.runInContext('state.x',context),72);
+  assert.equal(vm.runInContext('state.y',context),42);
+});
+test('entering the park at 20:00 does not advance the day',()=>{
+  const {context}=boot();
+  vm.runInContext("state.x=72;state.y=76;state.time=20;interact()",context);
+  assert.equal(vm.runInContext('state.scene',context),'park');
+  assert.equal(vm.runInContext('state.time',context),20);
+  vm.runInContext('leave()',context);
+  assert.equal(vm.runInContext('state.time',context),20);
 });
 test('suggested and typed dialogue share the same offline conversation path',async()=>{
   const {context,elements,ids}=boot();vm.runInContext("enter('cafe');openPerson('hao')",context);
