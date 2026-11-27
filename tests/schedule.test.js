@@ -11,7 +11,8 @@ test('each resident has one location on every day',()=>{
   const positions=schedule(day);
   assert.equal(Object.keys(positions).length,6);
   assert.equal(Object.values(positions).filter(scene=>scene==='cafe').length,2);
-  for(const scene of ['school','bakery','shop','park','town'])assert.ok(Object.values(positions).filter(place=>place===scene).length<=1);
+   for(const scene of ['school','bakery','shop','park','town'])assert.ok(Object.values(positions).filter(place=>place===scene).length<=1);
+   assert.equal(positions.gran,'town');
   assert.equal(Object.keys(positions).length,new Set(Object.keys(positions)).size);
  }
 });

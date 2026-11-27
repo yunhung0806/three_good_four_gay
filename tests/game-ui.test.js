@@ -3,49 +3,163 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 class Element{
- constructor(tag='div'){this.tagName=tag.toUpperCase();this.id='';this.children=[];this.childNodes=this.children;this.dataset={};this.style={setProperty(){}};this.classes=new Set();this.classList={add:name=>this.classes.add(name),remove:name=>this.classes.delete(name),contains:name=>this.classes.has(name)};this.firstChild={textContent:''}}
- append(...items){this.children.push(...items);this.childNodes=this.children}
- prepend(...items){this.children.unshift(...items);this.childNodes=this.children}
- replaceChildren(...items){this.children=[...items];this.childNodes=this.children}
- before(){}after(){}remove(){}setAttribute(){}focus(){}
+  constructor(tag='div'){this.tagName=tag.toUpperCase();this.id='';this.children=[];this.childNodes=this.children;this.dataset={};this.style={setProperty(){}};this.classes=new Set();this.classList={add:name=>this.classes.add(name),remove:name=>this.classes.delete(name),contains:name=>this.classes.has(name)};this.firstChild={textContent:''}}
+  append(...items){this.children.push(...items);this.childNodes=this.children}
+  prepend(...items){this.children.unshift(...items);this.childNodes=this.children}
+  replaceChildren(...items){this.children=[...items];this.childNodes=this.children}
+  before(){}after(){}remove(){}setAttribute(){}focus(){}
 }
-function boot(){const elements=[];const ids=new Map();for(const id of ['mode','modeNote','sceneName','clock','stats','map','hint','journal','links','network','principles','interact','rest','restart','close','talkForm','talk','dialog','dialogHelp','speaker','speakerRole','speech','conversation','portraitArt']){const e=new Element();e.id=id;ids.set(id,e);elements.push(e)}const controls=new Element(),aside=new Element(),document={getElementById:id=>ids.get(id)||elements.find(e=>e.id===id)||null,createElement:tag=>{const e=new Element(tag);elements.push(e);return e},createElementNS:(_,tag)=>{const e=new Element(tag);elements.push(e);return e},querySelector:selector=>selector==='.controls'?controls:selector==='aside'?aside:null,addEventListener(){}};const data=new Map(),context={document,location:{search:'?test=1'},URLSearchParams,localStorage:{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)},fetch:async path=>({json:async()=>path==='/api/config'?{mode:'離線備援'}:{mode:'離線備援',intent:'talk',emotion:'neutral',reply:'我聽見了。'}}),requestAnimationFrame(){},confirm:()=>true};context.window=context;vm.createContext(context);for(const file of ['src/world.js','src/story.js','src/npc-actions.js','src/endings.js','game.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context,{filename:file});return {context,ids,elements}}
+function boot(options={}){
+  const elements=[],ids=new Map();
+  for(const id of ['mode','modeNote','sceneName','clock','stats','map','hint','controlText','journal','links','network','principles','interact','rest','restart','close','talkForm','talk','dialog','dialogHelp','speaker','speakerRole','speech','conversation','portraitArt']){const e=new Element();e.id=id;ids.set(id,e);elements.push(e)}
+  const controls=new Element(),aside=new Element(),document={getElementById:id=>ids.get(id)||elements.find(e=>e.id===id)||null,createElement:tag=>{const e=new Element(tag);elements.push(e);return e},createElementNS:(_,tag)=>{const e=new Element(tag);elements.push(e);return e},querySelector:selector=>selector==='.controls'?controls:selector==='aside'?aside:null,addEventListener(){}};
+  const data=options.storage||new Map(),fetchImpl=options.fetch||(async path=>({json:async()=>path==='/api/config'?{mode:'離線備援'}:{mode:'離線備援',intent:'talk',emotion:'neutral',reply:'我聽見了。'}}));
+  const context={document,location:{search:options.search??'?test=1'},URLSearchParams,localStorage:{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)},fetch:fetchImpl,requestAnimationFrame(){},confirm:()=>true};
+  context.window=context;vm.createContext(context);
+  for(const file of ['src/world.js','src/story.js','src/npc-actions.js','src/endings.js','src/offline.js','game.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context,{filename:file});
+  return {context,ids,elements};
+}
 test('game boots, shows a story marker, and records an NPC memory through the scene flow',()=>{
- const {context,ids,elements}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');
- vm.runInContext("enter('cafe')",context);assert.equal(ids.get('sceneName').textContent,'微光咖啡館');
- assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'雨天借傘');
- vm.runInContext("openChoiceEvent('rain')",context);assert.equal(ids.get('speaker').textContent,'雨天借傘');
- vm.runInContext("LUMINA_STORY.resolveStoryChoice(state,'rain',0,.1,.1);render()",context);
- assert.ok(elements.find(e=>e.id==='npcMemories').children.some(e=>e.textContent?.includes('雨天借傘')));
+  const {context,ids,elements}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');
+  vm.runInContext("enter('cafe')",context);assert.equal(ids.get('sceneName').textContent,'微光咖啡館');
+  assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'雨天借傘');
+  vm.runInContext("openChoiceEvent('rain')",context);assert.equal(ids.get('speaker').textContent,'雨天借傘');
+  vm.runInContext("LUMINA_STORY.resolveStoryChoice(state,'rain',0,.1,.1);render()",context);
+  assert.ok(elements.find(e=>e.id==='npcMemories').children.some(e=>e.textContent?.includes('雨天借傘')));
+});
+test('returning from a house appears where the player entered it',()=>{
+  const {context}=boot();
+  vm.runInContext("state.x=69;state.y=32;interact({id:'school',name:'學校',type:'object',x:71,y:28})",context);
+  vm.runInContext("interact(objects().find(o=>o.name==='回到街道'))",context);
+  assert.equal(vm.runInContext('state.scene',context),'town');
+  assert.ok(Math.abs(vm.runInContext('state.x',context)-71)<8);
+  assert.ok(Math.abs(vm.runInContext('state.y',context)-28)<8);
+});
+test('returning to a blocked door nudges the player to a walkable spot',()=>{
+  const {context}=boot();
+  vm.runInContext("state.x=72;state.y=72;interact({id:'park',name:'公園',type:'object',x:78,y:79});interact(objects().find(o=>o.name==='回到街道'))",context);
+  assert.equal(vm.runInContext('state.scene',context),'town');
+  assert.equal(vm.runInContext('walkable(state.x,state.y)',context),true);
+});
+test('player can walk away immediately after returning to a door',()=>{
+  const {context}=boot();
+  vm.runInContext("state.x=69;state.y=32;interact({id:'school',name:'學校',type:'object',x:71,y:28});interact(objects().find(o=>o.name==='回到街道'))",context);
+  const before=vm.runInContext('state.y',context);
+  vm.runInContext("keys.add('s');loop(1000)",context);
+  assert.ok(vm.runInContext('state.y',context)>before);
+});
+test('memory return keeps the house door available afterward',()=>{
+  const {context}=boot();
+  vm.runInContext("state.x=71;state.y=28;enter('school');state.x=42;state.y=35;enterDialogueMemory('ning','好')",context);
+  vm.runInContext('close()',context);
+  vm.runInContext("interact({id:'back',name:'回到現實',type:'object'})",context);
+  assert.equal(vm.runInContext('state.scene',context),'school');
+  assert.ok(Math.abs(vm.runInContext('state.x',context)-42)<8);
+  assert.ok(Math.abs(vm.runInContext('state.y',context)-35)<8);
+  vm.runInContext("interact(objects().find(o=>o.name==='回到街道'))",context);
+  assert.equal(vm.runInContext('state.scene',context),'town');
+  assert.ok(Math.abs(vm.runInContext('state.x',context)-71)<8);
+  assert.ok(Math.abs(vm.runInContext('state.y',context)-28)<8);
 });
 test('suggested and typed dialogue share the same offline conversation path',async()=>{
- const {context,elements,ids}=boot();vm.runInContext("enter('cafe');openPerson('hao')",context);
- const suggestions=elements.find(e=>e.id==='dialogChoices');assert.equal(suggestions.children.length,3);
- await suggestions.children[0].onclick();assert.equal(ids.get('talkForm').classList.contains('hidden'),true);assert.equal(suggestions.classList.contains('hidden'),true);
- vm.runInContext("close();openPerson('hao')",context);assert.equal(ids.get('talkForm').classList.contains('hidden'),false);
- await vm.runInContext("speak('今天天氣如何？')",context);assert.equal(ids.get('talkForm').classList.contains('hidden'),true);
- assert.equal(vm.runInContext('state.npcTalk.hao.length',context),2);
+  const {context,elements,ids}=boot();vm.runInContext("enter('cafe');openPerson('hao')",context);
+  const suggestions=elements.find(e=>e.id==='dialogChoices');assert.equal(suggestions.children.length,3);
+  await suggestions.children[0].onclick();assert.equal(ids.get('talkForm').classList.contains('hidden'),true);assert.equal(suggestions.classList.contains('hidden'),true);
+  vm.runInContext("close();openPerson('hao')",context);assert.equal(ids.get('talkForm').classList.contains('hidden'),false);
+  await vm.runInContext("speak('今天天氣如何？')",context);assert.equal(ids.get('talkForm').classList.contains('hidden'),true);
+  assert.equal(vm.runInContext('state.npcTalk.hao.length',context),2);
 });
 test('a suggested action gives an immediate outcome and is remembered',()=>{
- const {context,ids,elements}=boot();vm.runInContext("enter('cafe');openPerson('hao')",context);
- const suggestions=elements.find(e=>e.id==='dialogChoices');suggestions.children[1].onclick();
- assert.match(ids.get('speech').textContent,/許浩|準時回家|下次再來/);
- assert.equal(ids.get('talkForm').classList.contains('hidden'),true);
- assert.equal(suggestions.classList.contains('hidden'),true);
- assert.equal(ids.get('dialogHelp').textContent,'按 Esc 離開對話');
- assert.equal(vm.runInContext('state.npcActionFlags.hao.title',context),'聽見疲憊');
- assert.equal(vm.runInContext('state.links.some(l=>l.from===\'player\'&&l.to===\'hao\')',context),true);
+  const {context,ids,elements}=boot();vm.runInContext("enter('cafe');openPerson('hao')",context);
+  const suggestions=elements.find(e=>e.id==='dialogChoices');suggestions.children[1].onclick();
+  assert.match(ids.get('speech').textContent,/許浩|準時回家|下次再來/);
+  assert.equal(ids.get('talkForm').classList.contains('hidden'),true);
+  assert.equal(suggestions.classList.contains('hidden'),true);
+  assert.equal(ids.get('dialogHelp').textContent,'按 Esc 離開對話');
+  assert.equal(vm.runInContext('state.npcActionFlags.hao.title',context),'聽見疲憊');
+  assert.equal(vm.runInContext('state.links.some(l=>l.from===\'player\'&&l.to===\'hao\')',context),true);
+});
+test('background controls are ignored while a dialog is open',()=>{
+  const {context,ids}=boot();
+  vm.runInContext("openSystem('記事','內容')",context);
+  ids.get('rest').onclick();
+  assert.equal(vm.runInContext('state.day',context),1);
+  vm.runInContext('close()',context);
+  ids.get('rest').onclick();
+  assert.equal(vm.runInContext('state.day',context),2);
 });
 test('the seventh day displays and preserves the earned ending',()=>{
- const {context,ids,elements}=boot();assert.ok(elements.find(e=>e.id==='endingLab'));
- for(let i=0;i<7;i++)vm.runInContext('nextDay()',context);
- assert.equal(vm.runInContext('state.finished',context),true);
- assert.match(ids.get('speaker').textContent,/結局/);
- assert.equal(ids.get('rest').textContent,'查看結局');
+  const {context,ids,elements}=boot();assert.ok(elements.find(e=>e.id==='endingLab'));
+  for(let i=0;i<7;i++)vm.runInContext('nextDay()',context);
+  assert.equal(vm.runInContext('state.finished',context),true);
+  assert.match(ids.get('speaker').textContent,/結局/);
+  assert.equal(ids.get('rest').textContent,'查看結局');
 });
 test('an NPC event is offered only where that resident is present',()=>{
- const {context}=boot();vm.runInContext("enter('school')",context);
- assert.equal(vm.runInContext("objects().some(o=>o.id==='scene-event')",context),false);
- vm.runInContext('nextDay();enter(\'school\')',context);
- assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'考卷上的紅字');
+  const {context}=boot();vm.runInContext("enter('school')",context);
+  assert.equal(vm.runInContext("objects().some(o=>o.id==='scene-event')",context),false);
+  vm.runInContext('nextDay();enter(\'school\')',context);
+  assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'考卷上的紅字');
+});
+test('the day-seven ending is not overwritten by a later action',()=>{
+  const {context,ids}=boot();
+  vm.runInContext("state.day=7;state.time=20;state.energy=100;state.scene='cafe';render()",context);
+  vm.runInContext("interact({id:'coffee',name:'咖啡機',type:'object'})",context);
+  assert.match(ids.get('speaker').textContent,/結局/);
+  const served=vm.runInContext('state.coffeeServed',context);
+  vm.runInContext("interact({id:'coffee',name:'咖啡機',type:'object'})",context);
+  assert.equal(vm.runInContext('state.coffeeServed',context),served);
+  vm.runInContext("interact({id:'school',name:'學校',type:'object'})",context);
+  assert.equal(vm.runInContext('state.scene',context),'cafe');
+  assert.equal(vm.runInContext("state.journal.filter(x=>x.includes('七天結束')).length",context),1);
+});
+test('free-text help shares the scripted action flags and cannot be counted twice',async()=>{
+  const fetch=async()=>({ok:true,json:async()=>({mode:'離線備援',intent:'help',emotion:'happy',reply:'謝謝你願意幫忙。'})});
+  const {context}=boot({fetch});
+  vm.runInContext("enter('cafe');openPerson('hao')",context);
+  await vm.runInContext("speak('我很願意伸出援手')",context);
+  assert.equal(vm.runInContext('state.kindness',context),1);
+  assert.equal(vm.runInContext("state.helped.includes('hao')",context),true);
+  assert.ok(vm.runInContext('!!state.npcActionFlags.hao',context));
+  await vm.runInContext("speak('我會幫你處理工作上的事了')",context);
+  assert.equal(vm.runInContext('state.kindness',context),1);
+  assert.doesNotMatch(vm.runInContext("state.npcTalk.hao.at(-1).reply",context),/準時回家|下次再來/);
+});
+test('free-text help uses the scripted action energy cost',async()=>{
+  const fetch=async()=>({ok:true,json:async()=>({mode:'離線備援',intent:'help',emotion:'happy',reply:'謝謝你願意幫忙。'})});
+  const {context}=boot({fetch});
+  vm.runInContext("enter('cafe');openPerson('hao');state.energy=5",context);
+  await vm.runInContext("speak('我很願意伸出援手')",context);
+  assert.equal(vm.runInContext('state.npcActionFlags.hao.title',context),'聽見疲憊');
+  assert.equal(vm.runInContext('state.kindness',context),1);
+});
+test('harm intent is not rewritten by a remembered event',async()=>{
+  const fetch=async()=>({ok:true,json:async()=>({mode:'離線備援',intent:'harm',emotion:'angry',reply:'這樣做會傷害人。我需要先保持距離。'})});
+  const {context,ids}=boot({fetch});
+  vm.runInContext("state.npcMemory.hao=[{title:'雨天借傘',day:1,choice:'借出自己的傘',success:true,kind:true}];enter('cafe');openPerson('hao')",context);
+  await vm.runInContext("speak('記得我要打他')",context);
+  assert.match(ids.get('speech').textContent,/保持距離/);
+  assert.doesNotMatch(ids.get('speech').textContent,/還記得「雨天借傘」/);
+});
+test('merely opening a dialogue does not mark an NPC as familiar',async()=>{
+  const {context}=boot();
+  vm.runInContext("enter('cafe');openPerson('hao')",context);
+  assert.equal(vm.runInContext("state.met.includes('hao')",context),false);
+  await vm.runInContext("speak('今天天氣如何？')",context);
+  assert.equal(vm.runInContext("state.met.includes('hao')",context),true);
+});
+test('a damaged save falls back to valid state shapes',()=>{
+  const storage=new Map([['lumina-cafe-v2',JSON.stringify({scene:'cafe',events:null,links:null,kindness:'x'})]]);
+  const {context}=boot({storage});
+  assert.equal(vm.runInContext('Array.isArray(state.events)',context),true);
+  assert.equal(vm.runInContext('Array.isArray(state.links)',context),true);
+  assert.equal(vm.runInContext('typeof state.kindness',context),'number');
+  assert.equal(vm.runInContext('typeof state.seed',context),'number');
+});
+test('an out-of-range saved day falls back instead of crashing the map',()=>{
+  const storage=new Map([['lumina-cafe-v2',JSON.stringify({day:0,scene:'cafe',money:-99})]]);
+  const {context}=boot({storage});
+  assert.equal(vm.runInContext('state.day',context),1);
+  assert.equal(vm.runInContext('state.money',context),60);
+  assert.equal(vm.runInContext("objects().some(o=>o.name.includes('undefined'))",context),false);
 });
