@@ -16,7 +16,7 @@ test('serves the game config and allowlisted static files',async()=>{
   const config=await fetch(`${base}/api/config`);
   assert.equal(config.status,200);
   assert.equal((await config.json()).mode,'離線備援');
-  for(const file of ['/index.html','/game.js','/src/offline.js','/assets/town.png']){
+  for(const file of ['/index.html','/game.js','/interface.css','/src/tilemap.js','/src/offline.js','/assets/town.png']){
     const response=await fetch(base+file);
     assert.equal(response.status,200,file);
   }

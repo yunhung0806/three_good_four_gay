@@ -2,30 +2,43 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 class Element{
   constructor(tag='div'){this.tagName=tag.toUpperCase();this.id='';this.children=[];this.childNodes=this.children;this.dataset={};this.style={setProperty(){}};this.classes=new Set();this.classList={add:name=>this.classes.add(name),remove:name=>this.classes.delete(name),contains:name=>this.classes.has(name)};this.firstChild={textContent:''}}
   append(...items){this.children.push(...items);this.childNodes=this.children}
   prepend(...items){this.children.unshift(...items);this.childNodes=this.children}
   replaceChildren(...items){this.children=[...items];this.childNodes=this.children}
   before(){}after(){}remove(){}setAttribute(){}focus(){}
+  showModal(){this.open=true}
+  close(){this.open=false}
 }
 function boot(options={}){
-  const elements=[],ids=new Map();
-  for(const id of ['mode','modeNote','sceneName','clock','stats','map','hint','controlText','journal','links','network','principles','interact','rest','restart','close','talkForm','talk','dialog','dialogHelp','speaker','speakerRole','speech','conversation','portraitArt']){const e=new Element();e.id=id;ids.set(id,e);elements.push(e)}
-  const controls=new Element(),aside=new Element(),document={getElementById:id=>ids.get(id)||elements.find(e=>e.id===id)||null,createElement:tag=>{const e=new Element(tag);elements.push(e);return e},createElementNS:(_,tag)=>{const e=new Element(tag);elements.push(e);return e},querySelector:selector=>selector==='.controls'?controls:selector==='aside'?aside:null,addEventListener(){}};
+  const elements=[],ids=new Map(),keyHandlers=[];
+  for(const [,tag,id] of html.matchAll(/<([a-z][\w-]*)[^>]*\bid="([^"]+)"/g)){
+    const e=new Element(tag);e.id=id;ids.set(id,e);elements.push(e);
+  }
+  ids.get('gameScreen').hidden=true;
+  const controls=new Element(),aside=new Element(),document={getElementById:id=>ids.get(id)||elements.find(e=>e.id===id)||null,createElement:tag=>{const e=new Element(tag);elements.push(e);return e},createElementNS:(_,tag)=>{const e=new Element(tag);elements.push(e);return e},querySelector:selector=>selector==='.controls'?controls:selector==='aside'?aside:null,addEventListener(type,handler){if(type==='keydown')keyHandlers.push(handler)}};
   const data=options.storage||new Map(),fetchImpl=options.fetch||(async path=>({json:async()=>path==='/api/config'?{mode:'離線備援'}:{mode:'離線備援',intent:'talk',emotion:'neutral',reply:'我聽見了。'}}));
   const context={document,location:{search:options.search??'?test=1'},URLSearchParams,localStorage:{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)},fetch:fetchImpl,requestAnimationFrame(){},confirm:()=>true};
   context.window=context;vm.createContext(context);
   for(const file of ['src/world.js','src/story.js','src/npc-actions.js','src/endings.js','src/offline.js','src/tilemap.js','game.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context,{filename:file});
-  return {context,ids,elements};
+  function pressKey(key,options={}){
+    const event={key,target:ids.get('map'),preventDefault(){this.defaultPrevented=true},...options};
+    for(const handler of keyHandlers)handler(event);
+    return event;
+  }
+  return {context,ids,elements,pressKey};
 }
 test('game boots, shows a story marker, and records an NPC memory through the scene flow',()=>{
-  const {context,ids,elements}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');assert.equal(ids.get('map').children[0].tagName,'CANVAS');
+  const {context,ids}=boot();assert.equal(ids.get('sceneName').textContent,'微光小鎮');assert.equal(ids.get('map').children[0].tagName,'CANVAS');
   vm.runInContext("enter('cafe')",context);assert.equal(ids.get('sceneName').textContent,'微光咖啡館');
   assert.equal(vm.runInContext("objects().find(o=>o.id==='scene-event').name",context),'雨天借傘');
   vm.runInContext("openChoiceEvent('rain')",context);assert.equal(ids.get('speaker').textContent,'雨天借傘');
   vm.runInContext("LUMINA_STORY.resolveStoryChoice(state,'rain',0,.1,.1);render()",context);
-  assert.ok(elements.find(e=>e.id==='npcMemories').children.some(e=>e.textContent?.includes('雨天借傘')));
+  assert.equal(vm.runInContext("state.npcMemory.hao[0].title",context),'雨天借傘');
+  assert.equal(ids.has('journal'),false);
+  assert.equal(ids.has('principles'),false);
 });
 test('returning from a house appears where the player entered it',()=>{
   const {context}=boot();
@@ -43,7 +56,8 @@ test('returning to an old blocked door uses that building entrance',()=>{
   assert.equal(vm.runInContext('state.y',context),40);
 });
 test('player can walk away immediately after returning to a door',()=>{
-  const {context}=boot();
+  const {context,ids}=boot();
+  ids.get('startGame').onclick();
   vm.runInContext("state.x=71;state.y=40;interact({id:'school',name:'學校',type:'object',x:71,y:37});interact(objects().find(o=>o.name==='回到街道'))",context);
   const before=vm.runInContext('state.y',context);
   vm.runInContext("keys.add('s');loop(1000);loop(1016)",context);
@@ -195,4 +209,77 @@ test('an out-of-range saved day falls back instead of crashing the map',()=>{
   assert.equal(vm.runInContext('state.day',context),1);
   assert.equal(vm.runInContext('state.money',context),60);
   assert.equal(vm.runInContext("objects().some(o=>o.name.includes('undefined'))",context),false);
+});
+
+test('the title menu opens the guide and can resume the same game',()=>{
+  const {context,ids}=boot();
+  assert.equal(ids.get('gameScreen').hidden,true);
+  ids.get('showGuide').onclick();
+  assert.equal(ids.get('howToPlay').open,true);
+  ids.get('howToPlay').open=false;
+  ids.get('startGame').onclick();
+  assert.equal(ids.get('mainMenu').hidden,true);
+  assert.equal(ids.get('gameScreen').hidden,false);
+  vm.runInContext("enter('cafe');nextDay()",context);
+  ids.get('backToMenu').onclick();
+  assert.equal(ids.get('mainMenu').hidden,false);
+  ids.get('startGame').onclick();
+  assert.equal(ids.get('progressDay').textContent,'第 2 天');
+  assert.equal(ids.get('weekProgress').value,1);
+  assert.match(ids.get('questObjective').textContent,/第 3 天/);
+});
+
+test('the inventory reflects coffee sales and restocking',()=>{
+  const {context,ids}=boot();
+  ids.get('startGame').onclick();
+  vm.runInContext("enter('cafe');interact(objects().find(o=>o.id==='coffee'));close();interact(objects().find(o=>o.id==='stock'))",context);
+  ids.get('showInventory').onclick();
+  assert.equal(ids.get('inventory').open,true);
+  assert.equal(ids.get('bagMoney').textContent,'66 元');
+  assert.equal(ids.get('bagStock').textContent,'5 份');
+});
+
+
+test('B toggles the backpack during play without interrupting dialogue or typing',()=>{
+  const {context,ids,pressKey}=boot();
+  pressKey('b');
+  assert.equal(Boolean(ids.get('inventory').open),false);
+  ids.get('startGame').onclick();
+  assert.equal(pressKey('B').defaultPrevented,true);
+  assert.equal(ids.get('inventory').open,true);
+  pressKey('b',{repeat:true});
+  assert.equal(ids.get('inventory').open,true);
+  pressKey('b');
+  assert.equal(ids.get('inventory').open,false);
+  pressKey('b',{ctrlKey:true});
+  pressKey('b',{target:ids.get('talk')});
+  assert.equal(ids.get('inventory').open,false);
+  vm.runInContext("enter('cafe');openPerson('hao')",context);
+  pressKey('b');
+  assert.equal(ids.get('inventory').open,false);
+});
+
+test('M opens the town overview, reports the current position, and leaves other overlays closed',()=>{
+  const {context,ids,pressKey}=boot();
+  pressKey('m');
+  assert.equal(Boolean(ids.get('worldMap').open),false);
+  ids.get('startGame').onclick();
+  assert.equal(ids.get('overviewLandmarks').children.length,5);
+  pressKey('m');
+  assert.equal(ids.get('worldMap').open,true);
+  assert.equal(ids.get('overviewPlayer').style.left,'28%');
+  assert.match(ids.get('overviewLocation').textContent,/微光小鎮/);
+  pressKey('e');
+  assert.equal(vm.runInContext('state.scene',context),'town');
+  pressKey('b');
+  assert.equal(Boolean(ids.get('inventory').open),false);
+  pressKey('m');
+  assert.equal(ids.get('worldMap').open,false);
+  pressKey('e');
+  assert.equal(vm.runInContext('state.scene',context),'cafe');
+  ids.get('showWorldMap').onclick();
+  assert.equal(ids.get('worldMap').open,true);
+  assert.match(ids.get('overviewLocation').textContent,/微光咖啡館/);
+  assert.equal(ids.get('overviewPlayer').style.left,'28%');
+  assert.equal(ids.get('overviewPlayer').style.top,'43%');
 });

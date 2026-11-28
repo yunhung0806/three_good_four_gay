@@ -46,7 +46,8 @@ ROLES = {
     'hao': '過勞上班族，需要有人傾聽', 'gran': '小鎮長者，重視陪伴與往事',
 }
 STATIC = {'/': 'index.html', '/index.html': 'index.html', '/game.js': 'game.js',
-          '/style.css': 'style.css', '/src/world.js': 'src/world.js',
+          '/style.css': 'style.css', '/interface.css': 'interface.css',
+          '/src/tilemap.js': 'src/tilemap.js', '/src/world.js': 'src/world.js',
           '/src/story.js': 'src/story.js', '/src/npc-actions.js': 'src/npc-actions.js',
           '/src/diagnostics.js': 'src/diagnostics.js', '/src/offline.js': 'src/offline.js',
           '/src/endings.js': 'src/endings.js'}

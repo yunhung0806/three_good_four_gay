@@ -1,1 +1,139 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>微光咖啡館 LUMINA CAFÉ</title><link rel="stylesheet" href="style.css"></head><body><main id="app"><header><div><small>LUMINA CAFÉ · <span id="mode">離線備援</span></small><h1>微光咖啡館</h1></div><div id="stats"></div></header><div class="layout"><section class="world"><div class="scenehead"><h2 id="sceneName"></h2><span id="clock"></span></div><div id="map" aria-label="遊戲地圖"></div><div id="hint" role="status" aria-live="polite"></div><div class="controls"><span id="controlText">WASD / 方向鍵：移動　 E：互動　 Esc：關閉對話 </span><span><button id="interact">互動 E</button><button id="rest">結束今天</button></span></div></section><aside><h2>三好四給實踐</h2><div id="principles" class="principles"></div><h2>善意傳播網路</h2><svg id="network" viewBox="0 0 280 180" role="img" aria-label="善意傳播網路"></svg><p class="note">線條表示遊戲內的事件傳播。</p><h2>生活日誌</h2><div id="journal"></div><h2>善意的連結</h2><div id="links"></div><p class="note" id="modeNote" role="status" aria-live="polite">正在確認 AI 狀態…</p><button id="restart">重新遊玩</button></aside></div><div id="dialog" class="hidden" role="dialog" aria-modal="true" aria-labelledby="speaker" aria-describedby="speech"><div class="portrait"><div id="portraitArt"></div></div><div class="dialogBody"><button id="close" class="close" aria-label="關閉對話">×</button><small id="speakerRole"></small><h2 id="speaker"></h2><p id="speech" role="status" aria-live="polite"></p><div id="conversation"></div><form id="talkForm"><input id="talk" aria-label="輸入想說的話" autocomplete="off" placeholder="輸入你想說的話，或描述你的行動……" maxlength="180"><button>送出 ↵</button></form><p class="note" id="dialogHelp">Enter 送出 · Esc 離開</p></div></div></main><script src="src/diagnostics.js"></script><script src="src/world.js"></script><script src="src/story.js"></script><script src="src/npc-actions.js"></script><script src="src/endings.js"></script><script src="src/offline.js"></script><script src="src/tilemap.js"></script><script src="game.js"></script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>微光咖啡館 LUMINA CAFÉ</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="interface.css">
+</head>
+<body>
+  <main id="app">
+    <section id="mainMenu" class="main-menu" aria-labelledby="gameTitle">
+      <div class="menu-content">
+        <p class="menu-brand" lang="en">LUMINA CAFÉ</p>
+        <h1 id="gameTitle">微光咖啡館</h1>
+        <div class="menu-actions">
+          <button id="startGame" class="primary-action" type="button">進入遊戲 <span aria-hidden="true">→</span></button>
+          <button id="showGuide" class="outline-action" type="button" aria-haspopup="dialog">遊玩說明</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen" aria-label="遊戲" hidden>
+      <header class="game-bar">
+        <nav class="game-actions" aria-label="遊戲選單">
+          <button id="showInventory" class="primary-action" type="button" aria-haspopup="dialog" aria-keyshortcuts="B">背包 <kbd aria-hidden="true">B</kbd></button>
+          <button id="backToMenu" class="outline-action" type="button">主選單</button>
+        </nav>
+        <div class="scenehead"><h2 id="sceneName" tabindex="-1"></h2><span id="clock"></span></div>
+      </header>
+
+      <button id="showWorldMap" class="minimap-button" type="button" aria-haspopup="dialog" aria-keyshortcuts="M" aria-label="開啟小鎮全地圖">
+        <canvas id="minimap" width="240" height="240" aria-hidden="true"></canvas>
+        <span class="map-north" aria-hidden="true">N</span>
+        <kbd aria-hidden="true">M</kbd>
+      </button>
+
+      <aside class="quest-panel" aria-label="主線任務與遊戲進度">
+        <details id="questTracker" class="quest-tracker">
+          <summary class="quest-summary">
+            <span class="quest-summary-copy">
+              <span class="quest-label">主線任務</span>
+              <span id="questObjective" aria-live="polite"></span>
+            </span>
+          </summary>
+          <div id="questDetails" class="quest-details">
+            <h2 id="questTitle">微光咖啡館的七天</h2>
+            <section aria-labelledby="progressTitle">
+              <h3 id="progressTitle">遊戲進度</h3>
+              <p class="progress-caption"><strong id="progressDay">第 1 天</strong><span id="daysCompleted">已完成 0 / 7 天</span></p>
+              <progress id="weekProgress" max="7" value="0" aria-label="已完成的遊戲天數"></progress>
+              <p class="progress-caption energy-caption"><span>體力</span><strong id="energyValue">100 / 100</strong></p>
+              <progress id="energyProgress" max="100" value="100" aria-label="體力"></progress>
+            </section>
+            <details class="network-details">
+              <summary>善意傳播網路 <span id="linkCount"></span></summary>
+              <svg id="network" viewBox="0 0 280 180" role="img" aria-label="善意傳播網路"></svg>
+            </details>
+            <footer class="quest-footer">
+              <p id="modeNote" role="status"></p>
+              <button id="restart" class="quiet-action" type="button">重新遊玩</button>
+            </footer>
+          </div>
+        </details>
+      </aside>
+
+      <section class="world" aria-labelledby="sceneName">
+        <div id="mapFrame">
+          <div id="map" aria-label="遊戲地圖"></div>
+          <div id="dialog" class="hidden" role="dialog" aria-modal="true" aria-labelledby="speaker" aria-describedby="speech">
+            <div class="portrait"><div id="portraitArt"></div></div>
+            <div class="dialogBody">
+              <button id="close" class="close" type="button" aria-label="關閉對話">×</button>
+              <small id="speakerRole"></small>
+              <h2 id="speaker"></h2>
+              <p id="speech" role="status" aria-live="polite"></p>
+              <div id="conversation"></div>
+              <form id="talkForm">
+                <input id="talk" aria-label="輸入想說的話" autocomplete="off" placeholder="輸入你想說的話，或描述你的行動……" maxlength="180">
+                <button>送出 ↵</button>
+              </form>
+              <p class="note" id="dialogHelp">Enter 送出 · Esc 離開</p>
+            </div>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="control-guide">
+            <p id="hint" role="status" aria-live="polite"></p>
+            <p id="controlText"></p>
+          </div>
+          <div class="scene-actions">
+            <button id="interact" class="outline-action" type="button">互動 <kbd>E</kbd></button>
+            <button id="rest" class="primary-action" type="button">結束今天</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <dialog id="howToPlay" class="overlay-card" aria-labelledby="guideTitle">
+      <form method="dialog"><button class="overlay-close outline-action" aria-label="關閉遊玩說明">×</button></form>
+      <h2 id="guideTitle">遊玩說明</h2>
+      <dl class="guide-list">
+        <div><dt>探索小鎮</dt><dd>使用 WASD 或方向鍵移動。走近地標、人物或事件後按 E 互動。</dd></div>
+        <div><dt>查看地圖</dt><dd>左上角小地圖顯示附近街區。點小地圖或按 M 開關小鎮全地圖。</dd></div>
+        <div><dt>室內互動</dt><dd>點擊場景中的頭像或標記，也可以按標記上的數字。對話時可選擇回應或輸入文字，按 Esc 關閉。</dd></div>
+        <div><dt>經營與進度</dt><dd>在咖啡館用咖啡機營業、補充原料。按 B 開關背包，查看金錢和物資。點小地圖下方的任務提示可展開進度。用「結束今天」推進七天故事。</dd></div>
+      </dl>
+    </dialog>
+
+    <dialog id="worldMap" class="overlay-card world-map" aria-labelledby="worldMapTitle">
+      <form method="dialog"><button class="overlay-close outline-action" aria-label="關閉全地圖">×</button></form>
+      <h2 id="worldMapTitle">微光小鎮地圖</h2>
+      <div class="atlas">
+        <canvas id="overviewMap" width="1536" height="864" aria-hidden="true"></canvas>
+        <div id="overviewLandmarks"></div>
+        <span id="overviewPlayer" class="atlas-player" aria-hidden="true"></span>
+      </div>
+      <p id="overviewLocation" class="atlas-location"></p>
+    </dialog>
+
+    <dialog id="inventory" class="overlay-card" aria-labelledby="inventoryTitle">
+      <form method="dialog"><button class="overlay-close outline-action" aria-label="關閉背包">×</button></form>
+      <h2 id="inventoryTitle">背包</h2>
+      <dl class="item-list">
+        <div><dt><span class="item-icon" aria-hidden="true">◉</span> 金錢</dt><dd id="bagMoney"></dd></div>
+        <div><dt><span class="item-icon" aria-hidden="true">☕</span> 咖啡原料</dt><dd id="bagStock"></dd></div>
+      </dl>
+    </dialog>
+  </main>
+  <script src="src/diagnostics.js"></script>
+  <script src="src/world.js"></script>
+  <script src="src/story.js"></script>
+  <script src="src/npc-actions.js"></script>
+  <script src="src/endings.js"></script>
+  <script src="src/offline.js"></script>
+  <script src="src/tilemap.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

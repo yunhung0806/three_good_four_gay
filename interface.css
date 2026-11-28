@@ -1,0 +1,388 @@
+:root {
+  --ui-ink: #f2e8d5;
+  --ui-muted: #bfbea9;
+  --ui-dark: #171d1b;
+  --ui-panel: #202824;
+  --ui-line: #92846854;
+  --ui-gold: #e8c58b;
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--ui-ink);
+  background: radial-gradient(ellipse at 72% 0, #303a30, #151a17 72%);
+}
+
+[hidden] { display: none !important; }
+
+.main-menu {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding: clamp(30px, 9.6vw, 165px);
+  background:
+    linear-gradient(90deg, #151b18 1%, #151b18ef 20%, #1820198c 49%, #1b21191a 78%),
+    linear-gradient(0deg, #161b19cc, transparent 45%),
+    #29322a url('assets/cafe.png') center 55% / cover no-repeat;
+}
+
+.menu-content { width: min(100%, 680px); }
+.menu-brand {
+  margin: 0 0 18px;
+  color: #e3bc85;
+  font: 600 .89rem Georgia, serif;
+  letter-spacing: .4em;
+}
+
+.main-menu h1 {
+  color: #fff3d8;
+  font: 600 clamp(3rem, 7vw, 7.1rem)/1.08 Georgia, 'Noto Serif TC', 'PMingLiU', serif;
+  letter-spacing: .08em;
+  text-wrap: balance;
+  text-shadow: 0 8px 32px #171a10b3;
+}
+
+.menu-actions { display: grid; gap: 14px; width: min(100%, 218px); margin-top: clamp(32px, 5vw, 62px); }
+.menu-actions button { min-height: 53px; }
+.menu-actions .primary-action { display: flex; justify-content: space-between; align-items: center; padding-inline: 22px; }
+
+.primary-action, .outline-action {
+  border-radius: 7px;
+  padding: 9px 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.primary-action { background: var(--ui-gold); color: #252019; border-color: #f4d7a0; }
+.primary-action:hover { background: #f5d9a5; }
+.outline-action { background: #202923df; color: var(--ui-ink); border-color: #a99b78a6; }
+.outline-action:hover { background: #343e32; border-color: var(--ui-gold); }
+.quiet-action { color: var(--ui-muted); background: transparent; border-color: transparent; padding: 6px 0; font-size: .82rem; }
+.quiet-action:hover { background: transparent; color: #f6d298; }
+
+.game-screen {
+  --hud-gap: clamp(12px, 2vw, 28px);
+  --minimap-size: clamp(112px, 13vw, 158px);
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  background: #1f2c24;
+}
+
+.game-screen .world,
+.game-screen #mapFrame,
+.game-screen #map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+  box-shadow: none;
+}
+
+.game-bar {
+  position: absolute;
+  z-index: 3;
+  top: var(--hud-gap);
+  right: var(--hud-gap);
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  padding: 0;
+  pointer-events: none;
+  background: transparent;
+  border: 0;
+}
+
+.game-actions, .scene-actions { display: flex; gap: 8px; align-items: center; }
+.game-actions, .scene-actions, .control-guide { pointer-events: auto; }
+.game-actions .outline-action, .scene-actions .outline-action { box-shadow: 0 2px 10px #18211860; }
+#showInventory kbd {
+  display: inline-block;
+  padding: 0 4px;
+  color: #38291b;
+  border: 1px solid #9c7749;
+  border-radius: 3px;
+  font-size: .72em;
+  line-height: 1.35;
+}
+.game-screen .scenehead {
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #151f1be6;
+}
+.game-screen .scenehead h2 { margin: 0; font-size: .85rem; color: #fff1d5; }
+#sceneName:focus { outline: none; }
+#clock { color: #e7c996; font-size: .78rem; font-variant-numeric: tabular-nums; }
+
+.minimap-button {
+  position: absolute;
+  z-index: 3;
+  top: var(--hud-gap);
+  left: var(--hud-gap);
+  width: var(--minimap-size);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 3px solid #e8c589;
+  border-radius: 50%;
+  background: #263832;
+  box-shadow: 0 0 0 2px #17221ce3, 0 7px 23px #101a15a0;
+}
+.minimap-button:hover { border-color: #fff0c6; background: #263832; }
+.minimap-button canvas { display: block; width: 100%; height: 100%; border-radius: 50%; image-rendering: pixelated; }
+.minimap-button .map-north, .minimap-button kbd {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  color: #fff0cd;
+  background: #19251ef2;
+  border-radius: 4px;
+  font: 700 .68rem/1 system-ui, sans-serif;
+}
+.minimap-button .map-north { top: 4px; width: 17px; height: 17px; }
+.minimap-button kbd { bottom: 5px; margin: 0; width: 20px; height: 16px; border: 1px solid #e8c589a3; }
+
+.quest-panel {
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--hud-gap) + var(--minimap-size) + 9px);
+  bottom: calc(var(--hud-gap) + 58px);
+  left: var(--hud-gap);
+  display: flex;
+  align-items: flex-start;
+  width: var(--minimap-size);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  pointer-events: none;
+}
+.quest-tracker {
+  width: 100%;
+  max-height: 100%;
+  border: 1px solid #f2d19865;
+  border-radius: 9px;
+  background: #19251eea;
+  box-shadow: 0 5px 28px #12221869;
+  overflow: auto;
+  pointer-events: auto;
+}
+.quest-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.quest-summary::-webkit-details-marker { display: none; }
+.quest-summary::marker { content: ''; }
+.quest-summary:hover { background: #f1d19616; }
+.quest-summary:focus-visible { outline: 2px solid #ffe3a3; outline-offset: -3px; }
+.quest-summary::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin: 0 3px 4px 0;
+  border: solid var(--ui-gold);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.quest-tracker[open] .quest-summary::after { margin-block: 4px 0; transform: rotate(225deg); }
+.quest-summary-copy { display: grid; min-width: 0; gap: 4px; }
+.quest-label { color: var(--ui-gold); font-size: .75rem; font-weight: 600; }
+#questObjective { color: var(--ui-ink); font-size: .8rem; line-height: 1.45; }
+.quest-details {
+  display: grid;
+  gap: 11px;
+  padding: 11px 12px 8px;
+  border-top: 1px solid var(--ui-line);
+}
+.quest-details h2, .quest-details h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #f5d5a0;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.quest-details h3 { margin-bottom: 6px; color: var(--ui-ink); font-size: .8rem; }
+.progress-caption { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; color: var(--ui-muted); font-size: .76rem; }
+.progress-caption strong { color: var(--ui-ink); font-size: .93rem; white-space: nowrap; }
+.progress-caption > span { text-align: right; }
+.energy-caption { margin-top: 11px; }
+.energy-caption > span { text-align: left; }
+.energy-caption strong { font-size: .76rem; font-weight: 500; }
+.quest-panel progress {
+  display: block;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  margin-top: 7px;
+  border: none;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #131a15;
+}
+.quest-panel progress::-webkit-progress-bar { background: #121a15; }
+.quest-panel progress::-webkit-progress-value { background: #d7af73; }
+.quest-panel progress::-moz-progress-bar { background: #d7af73; }
+#energyProgress::-webkit-progress-value { background: #a5b892; }
+#energyProgress::-moz-progress-bar { background: #a5b892; }
+
+.network-details { font-size: .78rem; color: var(--ui-muted); }
+.network-details summary { cursor: pointer; padding-block: 3px; }
+.network-details summary span { float: right; color: var(--ui-gold); }
+.network-details #network { margin-top: 8px; }
+.quest-footer { border-top: 1px solid var(--ui-line); padding-top: 8px; }
+#modeNote { margin: 0 0 4px; font-size: .73rem; line-height: 1.5; color: #b9c2af; overflow-wrap: anywhere; }
+
+.game-screen #map[data-scene=town] .object {
+  transform: translate(-50%, calc(-100% - 5px));
+}
+.game-screen #map[data-scene=town] .object:hover {
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
+.game-screen .controls {
+  position: absolute;
+  z-index: 3;
+  bottom: var(--hud-gap);
+  left: var(--hud-gap);
+  right: var(--hud-gap);
+  align-items: end;
+  flex-direction: row;
+  gap: 8px 12px;
+  pointer-events: none;
+}
+.control-guide { padding: 7px 11px; border-radius: 6px; background: #19251eea; }
+.control-guide p { margin: 0; }
+.control-guide #hint { height: auto; padding: 0; min-height: 1.4em; color: #f0d2a2; }
+.control-guide #controlText { font-size: .72rem; margin-top: 3px; color: var(--ui-muted); }
+.scene-actions button { font-size: .82rem; }
+kbd { font: inherit; color: #e5c695; margin-inline-start: 3px; }
+
+.game-screen #mapFrame #dialog {
+  inset: auto auto var(--hud-gap) 50%;
+  transform: translateX(-50%);
+  width: min(830px, calc(100% - 2 * var(--hud-gap)));
+  min-height: min(345px, 65dvh);
+  max-height: calc(100dvh - 105px);
+  grid-template-columns: minmax(180px, 36%) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  border: 1px solid #d6b782;
+  border-radius: 12px;
+  background: #22302a;
+  box-shadow: 0 16px 72px #121c15b8;
+}
+.game-screen #mapFrame #dialog .dialogBody {
+  display: block;
+  padding: 24px;
+  max-height: inherit;
+  overflow: auto;
+}
+.game-screen #mapFrame #dialog .dialogBody .close { top: 12px; right: 12px; }
+.game-screen #mapFrame #dialog .dialogBody h2 { margin: 5px 48px 7px 0; }
+.game-screen #mapFrame #dialog #talkForm { flex-wrap: nowrap; gap: 6px; margin-top: 12px; }
+.game-screen #mapFrame #dialog #talkForm button { width: auto; white-space: nowrap; }
+.game-screen #mapFrame #dialog.system { min-height: 0; width: min(650px, calc(100% - 2 * var(--hud-gap))); }
+.game-screen #mapFrame #dialog.system .dialogBody { width: 100%; border: 0; border-radius: inherit; }
+
+.overlay-card {
+  position: fixed;
+  width: min(calc(100vw - 28px), 480px);
+  padding: clamp(20px, 4vw, 32px);
+  color: var(--ui-ink);
+  background: #242c27;
+  border: 1px solid #a59573;
+  border-radius: 14px;
+  box-shadow: 0 20px 90px #0009;
+}
+.world-map {
+  width: min(1100px, calc(100vw - 28px));
+  max-height: calc(100dvh - 28px);
+}
+.world-map .atlas {
+  position: relative;
+  width: min(100%, max(280px, calc((100dvh - 155px) * 1.77778)));
+  margin-inline: auto;
+  border: 1px solid #bfa16e;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #668a64;
+}
+.atlas canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; }
+.atlas-landmark, .atlas-player { position: absolute; white-space: nowrap; }
+.atlas-landmark {
+  transform: translate(-50%, calc(-100% - 5px));
+  padding: 3px 6px;
+  border: 1px solid #f7d2949e;
+  border-radius: 4px;
+  color: #fff3d5;
+  background: #19291ffc;
+  font-size: clamp(.62rem, 1.5vw, .83rem);
+}
+.atlas-player {
+  width: 13px;
+  height: 13px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #18251e;
+  border-radius: 50%;
+  background: #fff3cd;
+  box-shadow: 0 0 0 2px #fff0bccc;
+}
+.atlas-location { margin: 10px 0 0; color: var(--ui-gold); font-size: .85rem; text-align: center; }
+
+.overlay-card::backdrop { background: #0e1411bc; backdrop-filter: blur(3px); }
+.overlay-card h2 { margin: 0 40px 16px 0; color: #fae5be; font-size: 1.65rem; font-weight: 600; }
+.overlay-close { position: absolute; right: 16px; top: 16px; padding: 5px 11px; font-size: 1.14rem; }
+.guide-list, .item-list { margin: 0; }
+.guide-list > div, .item-list > div { padding: 12px 0; border-top: 1px solid var(--ui-line); }
+.guide-list dt { font-weight: 600; color: #efce99; }
+.guide-list dd { margin: 4px 0 0; color: #e0dbca; font-size: .9rem; line-height: 1.6; }
+.item-list > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.item-list dt { display: flex; gap: 10px; align-items: center; }
+.item-list dd { margin: 0; color: #f4ce94; font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.item-icon { display: grid; place-items: center; width: 37px; height: 37px; background: #101810; border: 1px solid var(--ui-line); border-radius: 8px; color: #ebc78f; }
+
+@media (max-width: 680px) {
+  .main-menu { background-position: 58% center; }
+  .main-menu h1 { font-size: clamp(2.7rem, 10vw, 4.3rem); }
+  .game-screen { --minimap-size: min(112px, 27vw, 24dvh); }
+  .game-actions { gap: 5px; }
+  .game-actions button { padding-inline: 8px; font-size: .76rem; }
+  .quest-summary { gap: 6px; padding: 8px; }
+  .quest-details { padding: 8px; gap: 8px; }
+  #questObjective, .progress-caption, .energy-caption strong { font-size: .69rem; }
+  .progress-caption strong { font-size: .79rem; }
+  .network-details { font-size: .72rem; }
+  .scene-actions { gap: 5px; margin-left: auto; }
+  .scene-actions button { padding-inline: 7px; }
+  .control-guide #controlText { display: none; }
+  .game-screen #mapFrame #dialog {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(115px, 27dvh) minmax(0, auto);
+    min-height: 0;
+  }
+  .game-screen #mapFrame #dialog .dialogBody { padding: 14px; }
+  .game-screen #mapFrame #dialog #portraitArt { height: 100%; width: min(52%, 190px); left: 50%; transform: translateX(-50%); }
+}

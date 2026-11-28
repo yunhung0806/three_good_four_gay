@@ -401,14 +401,75 @@
     else { rect(ctx, '#28374d', -5, -31, 3, 3); rect(ctx, '#28374d', 3, -31, 3, 3); }
     ctx.restore();
   }
-  function draw(canvas, xPercent, yPercent, direction = 'down', frame = -1) {
-    const ctx = canvas?.getContext?.('2d');
+  function cameraFor(viewWidth, viewHeight, playerX, playerY) {
+    const scale = Math.max(viewWidth / (30 * tile), viewHeight / (16 * tile));
+    const visibleWidth = viewWidth / scale;
+    const visibleHeight = viewHeight / scale;
+    const x = Math.min(width - visibleWidth, Math.max(0, Math.round(playerX * width / 100 - visibleWidth / 2)));
+    const y = Math.min(height - visibleHeight, Math.max(0, Math.round(playerY * height / 100 - visibleHeight / 2)));
+    return { x, y, width: visibleWidth, height: visibleHeight, scale };
+  }
+
+  function screenPoint(camera, xPercent, yPercent) {
+    return {
+      x: (xPercent * width / 100 - camera.x) * camera.scale,
+      y: (yPercent * height / 100 - camera.y) * camera.scale
+    };
+  }
+
+  function draw(canvas, camera, xPercent, yPercent, direction, frame) {
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     const terrain = getTerrain();
-    if (terrain) ctx.drawImage(terrain, 0, 0);
-    drawActor(ctx, xPercent * width / 100, yPercent * height / 100, direction, frame);
+    ctx.drawImage(terrain, camera.x, camera.y, camera.width, camera.height, 0, 0, canvas.width, canvas.height);
+    const actor = screenPoint(camera, xPercent, yPercent);
+    ctx.save();
+    ctx.translate(Math.round(actor.x), Math.round(actor.y));
+    ctx.scale(camera.scale, camera.scale);
+    drawActor(ctx, 0, 0, direction, frame);
+    ctx.restore();
   }
+  function drawMinimap(canvas, xPercent, yPercent, direction) {
+    const ctx = canvas.getContext?.('2d');
+    if (!ctx) return;
+    const center = canvas.width / 2;
+    const scale = canvas.width / (12 * tile);
+    const x = xPercent * width / 100;
+    const y = yPercent * height / 100;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#283c32';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(getTerrain(), Math.round(center - x * scale), Math.round(center - y * scale), width * scale, height * scale);
+
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#18251e';
+    ctx.fillStyle = '#fff3cd';
+    ctx.beginPath();
+    if (direction) {
+      ctx.rotate({ up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 }[direction]);
+      ctx.moveTo(0, -12);
+      ctx.lineTo(9, 8);
+      ctx.lineTo(0, 5);
+      ctx.lineTo(-9, 8);
+      ctx.closePath();
+    } else {
+      ctx.arc(0, 0, 7, 0, 2 * Math.PI);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawOverview(canvas) {
+    const ctx = canvas.getContext?.('2d');
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(getTerrain(), 0, 0, canvas.width, canvas.height);
+  }
+
   function canWalk(xPercent, yPercent) {
     const px = xPercent * width / 100, py = yPercent * height / 100;
     for (const ox of [-6, 6]) for (const oy of [-5, 0]) {
@@ -426,5 +487,5 @@
     if (canWalk(xPercent, nextY)) yPercent = nextY;
     return [xPercent, yPercent];
   }
-  root.LUMINA_TILEMAP = { cols, rows, tile, width, height, ground, solid, buildings, canWalk, move, draw };
+  root.LUMINA_TILEMAP = { cols, rows, tile, width, height, ground, solid, buildings, canWalk, move, cameraFor, screenPoint, draw, drawMinimap, drawOverview };
 })(typeof window === 'undefined' ? globalThis : window);

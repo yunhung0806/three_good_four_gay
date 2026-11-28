@@ -16,7 +16,7 @@ try {
   }
 } catch(error) { if(error.code!=='ENOENT')console.warn(`.env 讀取失敗：${error.message}`); }
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.json':'application/json; charset=utf-8'};
-const staticRoutes=new Set(['/index.html','/game.js','/style.css','/src/world.js','/src/story.js','/src/npc-actions.js','/src/endings.js','/src/diagnostics.js','/src/offline.js']);
+const staticRoutes=new Set(['/index.html','/game.js','/style.css','/interface.css','/src/tilemap.js','/src/world.js','/src/story.js','/src/npc-actions.js','/src/endings.js','/src/diagnostics.js','/src/offline.js']);
 const assetPattern=/^\/assets\/[\w.-]+\.png$/;
 const rateWindow=60_000,rateLimitCount=20,maxActive=4;
 const hits=new Map();

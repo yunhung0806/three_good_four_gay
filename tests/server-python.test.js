@@ -21,7 +21,11 @@ test('python server matches the node HTTP contract',async t=>{
     const config=await fetch(`${base}/api/config`);
     assert.equal(config.status,200);
     assert.equal((await config.json()).mode,'離線備援');
-    assert.equal((await fetch(`${base}/src/offline.js`)).status,200);
+    for(const path of ['/interface.css','/src/tilemap.js','/src/offline.js']){
+      const response=await fetch(base+path);
+      assert.equal(response.status,200,path);
+      assert.ok((await response.text()).length,path);
+    }
     assert.equal((await fetch(`${base}/package.json`)).status,404);
     const ok=await fetch(`${base}/api/dialogue`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({person:'ning',input:'你好'})});
     assert.equal(ok.status,200);

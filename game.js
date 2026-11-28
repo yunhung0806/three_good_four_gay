@@ -12,16 +12,16 @@ let state=loadState();
 if(state.scene==='town'&&!walkable(state.x,state.y))[state.x,state.y]=scenes.town.spawn;
 function random(){let x=state.seed>>>0;if(!x)x=0x9e3779b9;x^=x<<13;x^=x>>>17;x^=x<<5;x>>>=0;state.seed=x;return x/4294967296}
 globalThis.LUMINA_RANDOM=random;
-let talking=null,keys=new Set(),lastFrame=0,lastSave=0,history=[],busy=false,endingOpen=false,returnFocus=null,lastMapKey='',mapObjectEls=[],townCanvas=null,facing='down',stride=0,walkingFrame=-1,lastNetworkKey='',lastMemoryKey='',lastLogKey='';
+let talking=null,keys=new Set(),lastFrame=0,lastSave=0,history=[],busy=false,endingOpen=false,returnFocus=null,lastMapKey='',mapObjectEls=[],townCanvas=null,facing='down',stride=0,walkingFrame=-1,lastNetworkKey=null,lastProgressKey='',lastMinimapKey='';
 fetch('/api/config').then(r=>r.json()).then(x=>setMode(x.mode)).catch(()=>setMode('離線備援'));
-function setMode(mode){$('mode').textContent=mode;$('modeNote').textContent=mode==='AI'?'自由對話由 AI 生成；遊戲狀態由程式驗證。':'離線備援模式：未設定 API 金鑰或連線失敗，由本地規則回應。'}
+function setMode(mode){$('modeNote').textContent=mode==='AI'?'AI 對話已啟用':'離線遊玩'}
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}}
 function note(s){state.journal.unshift(`第 ${state.day} 天 · ${s}`);state.journal=state.journal.slice(0,15);save();render()}
 function tick(n=1){state.time+=n;state.energy=Math.max(0,state.energy-4*n);if(state.time>=21)nextDay();save()}
 function nextDay(){if(state.day>=7){state.finished=true;state.time=21;state.energy=0;state.ending=LUMINA_ENDINGS.storyEnding(state);note(`七天結束。${state.ending.title}`);showEnding();return}state.day++;state.time=9;state.energy=100;state.scene='cafe';[state.x,state.y]=scenes.cafe.spawn;state.entries=[];state.townReturn=null;note('新的一天開始。');if(state.community>0&&random()<.45){state.money+=5;note('曾受幫助的居民送來咖啡館小禮，回流收入 5 元。')}}
 function showEnding(){if(!state.ending?.impact||!Array.isArray(state.ending.impact)||!Array.isArray(state.ending.epilogues))state.ending=LUMINA_ENDINGS.storyEnding(state);const ending=state.ending;openSystem(`結局・${ending.title}`,`${ending.text}\n\n你留下的改變：\n${ending.impact.join('\n')}\n\n${ending.epilogues.join('\n')}\n本週：善意 ${state.kindness} 次、居民互助 ${state.community} 次、記憶線索 ${state.memoryClues.length} 片、製作咖啡 ${state.coffeeServed||0} 杯。`,true)}
 function captureFocus(){const active=document.activeElement;if(active&&active!==document.body&&!returnFocus)returnFocus=active}
-function setModal(on){const list=document.querySelectorAll?.('header, .controls, aside, #map');if(list?.forEach)list.forEach(el=>{el.inert=on})}
+function setModal(on){const list=document.querySelectorAll?.('header, .controls, aside, #map, #showWorldMap');if(list?.forEach)list.forEach(el=>{el.inert=on})}
 function restoreFocus(){const target=returnFocus;returnFocus=null;if(target&&target.isConnected!==false&&target.focus)target.focus();else if(state.scene==='town')$('interact')?.focus?.()}
 function markMet(id){if(!state.met.includes(id)){state.met.push(id);save()}}
 function objects(){let a=scenes[state.scene].objects.map(([id,name,icon,x,y])=>({id,name,icon,x,y,type:'object'}));if(state.scene==='memory'&&LUMINA_MEMORIES[state.memoryOwner]){a=a.filter(o=>o.id!=='clue');LUMINA_MEMORIES[state.memoryOwner].clues.forEach(([name],i)=>a.push({id:`clue-${i}`,name,icon:'✦',x:35+i*20,y:36+(i%2)*18,type:'object'}))}const schedule=residentSchedule(state.day),present=Object.keys(schedule).filter(id=>schedule[id]===state.scene);present.forEach((id,i)=>{const [x,y]=state.scene==='town'?[70,66]:state.scene==='cafe'?[65+i*17,47+i*17]:[67,48];a.push({id,name:people[id].name,icon:'✦',x,y,type:'npc'})});if(state.scene!=='memory'&&!state.finished){const offered=LUMINA_STORY.storyOffer(state,state.scene,present);if(offered&&schedule[offered.owner]===state.scene)a.push({id:'scene-event',name:offered.title,icon:'✦',x:state.scene==='town'?52:87,y:state.scene==='town'?78:20,type:'object',eventId:offered.id})}return a}
@@ -30,11 +30,11 @@ function walkable(x,y){return Number.isFinite(x)&&Number.isFinite(y)&&(state.sce
 function freeSpot(x,y){return walkable(x,y)}
 function place(x,y){state.x=x;state.y=y;if(freeSpot(x,y))return;for(const [dx,dy] of [[0,6],[0,-6],[6,0],[-6,0],[6,6],[-6,6],[6,-6],[-6,-6]]){const nx=x+dx,ny=y+dy;if(freeSpot(nx,ny)){state.x=nx;state.y=ny;return}}[state.x,state.y]=scenes[state.scene].spawn}
 function render(){
-  const s=scenes[state.scene];$('sceneName').textContent=s.name;$('clock').textContent=`第 ${state.day} 天 · ${String(state.time).padStart(2,'0')}:00`;$('stats').innerHTML=`<span>💰 ${state.money}</span><span>⚡ ${state.energy}</span><span>🫘 ${state.stock}</span><span>✨ ${state.kindness}</span>`;
+  const s=scenes[state.scene];$('sceneName').textContent=s.name;$('clock').textContent=`${String(state.time).padStart(2,'0')}:00`;
   $('map').dataset.scene=state.scene;const list=objects(),near=nearest(list),key=[state.scene,state.day,state.finished,state.memoryOwner,list.map(o=>`${o.id}:${o.name}`).join(',')].join('|');
   if(key!==lastMapKey){
    const focused=document.activeElement?.dataset?.hotkey;
-   lastMapKey=key;mapObjectEls=[];townCanvas=null;$('map').replaceChildren();if(state.scene==='town'){townCanvas=document.createElement('canvas');townCanvas.className='town-canvas';townCanvas.width=LUMINA_TILEMAP.width;townCanvas.height=LUMINA_TILEMAP.height;townCanvas.setAttribute('aria-hidden','true');$('map').append(townCanvas)}
+   lastMapKey=key;mapObjectEls=[];townCanvas=null;$('map').replaceChildren();if(state.scene==='town'){townCanvas=document.createElement('canvas');townCanvas.className='town-canvas';townCanvas.setAttribute('aria-hidden','true');$('map').append(townCanvas)}
    for(const [index,o] of list.entries()){
     const e=document.createElement('div');e.className=`object ${o.type}${near?.id===o.id?' near':''}`;e.style.left=o.x+'%';e.style.top=o.y+'%';e.dataset.hotkey=index+1;e.tabIndex=0;e.setAttribute('role','button');e.setAttribute('aria-label',`${o.name}，按 ${index+1} 互動`);e.innerHTML=`<span>${o.icon}</span><b>${o.name}</b>`;
     if(o.type==='npc'){const [px,py]=portraitPositions[o.id];e.style.setProperty('--portrait-x',px);e.style.setProperty('--portrait-y',py)}
@@ -42,14 +42,82 @@ function render(){
    }
    if(focused){const target=mapObjectEls[Number(focused)-1];if(target?.focus)target.focus()}
   }
-  if(state.scene==='town'&&townCanvas)LUMINA_TILEMAP.draw(townCanvas,state.x,state.y,facing,walkingFrame)
+  if(townCanvas)renderTown(list);
   for(const [index,e] of mapObjectEls.entries()){if(list[index]?.id===near?.id)e.classList.add('near');else e.classList.remove('near')}
   $('hint').textContent=state.scene==='town'?(near?`按 E：${near.name}`:'靠近地標或人物，按 E 互動'):'點場景中的頭像或標記，或按標記上的數字互動。';$('interact').hidden=state.scene!=='town';$('rest').textContent=state.finished?'查看結局':'結束今天';$('controlText').textContent=state.scene==='town'?'WASD / 方向鍵：移動　 E：互動　 Esc：關閉對話 ':'點頭像或按數字互動　 Esc：關閉對話 ';
-  renderLogs();renderNetwork();renderNpcMemories();
+  renderProgress();
+  renderNetwork();
+  renderMinimap();
+}
+function renderTown(list=objects()){
+ const map=$('map');
+ const width=map.clientWidth,height=map.clientHeight;
+ if(!width||!height)return;
+ if(townCanvas.width!==width)townCanvas.width=width;
+ if(townCanvas.height!==height)townCanvas.height=height;
+ const camera=LUMINA_TILEMAP.cameraFor(width,height,state.x,state.y);
+ LUMINA_TILEMAP.draw(townCanvas,camera,state.x,state.y,facing,walkingFrame);
+ for(const [index,marker] of mapObjectEls.entries()){
+  const object=list[index];
+  const point=LUMINA_TILEMAP.screenPoint(camera,object.x,object.y);
+  marker.hidden=point.x<0||point.x>=width||point.y<0||point.y>=height;
+  if(!marker.hidden){
+   marker.style.left=`${Math.round(point.x)}px`;
+   marker.style.top=`${Math.round(point.y)}px`;
+  }
  }
-function renderLogs(){const key=state.journal.join('|')+'#'+state.links.map(l=>`${l.from}>${l.to}:${l.action}`).join('|');if(key===lastLogKey)return;lastLogKey=key;$('journal').replaceChildren(...state.journal.map(t=>{let p=document.createElement('p');p.textContent=t;return p}));$('links').replaceChildren(...state.links.slice(-6).reverse().map(l=>{let p=document.createElement('p');p.textContent=`${people[l.from]?.name||'你'} → ${people[l.to]?.name||'居民'} · ${l.action}`;return p}))}
-function renderNpcMemories(){const panel=$('npcMemories');if(!panel)return;const key=JSON.stringify(state.npcMemory||{});if(key===lastMemoryKey&&panel.childNodes.length)return;lastMemoryKey=key;panel.replaceChildren();for(const [id,records] of Object.entries(state.npcMemory||{})){const last=records.at(-1);if(!last)continue;const line=document.createElement('p');line.textContent=`${people[id]?.name||id}記得「${last.title}」：${last.choice}`;panel.append(line)}if(!panel.childNodes.length){const line=document.createElement('p');line.textContent='居民還沒有共同經歷的事件。';panel.append(line)}}
-function renderNetwork(){const key=state.links.map(l=>`${l.from}>${l.to}:${l.id}`).join('|')+'#'+(state.principles||[]).join('|');if(key===lastNetworkKey)return;lastNetworkKey=key;const tags=['做好事','說好話','存好心','給人信心','給人歡喜','給人希望','給人方便'];$('principles').replaceChildren(...tags.map(t=>{const e=document.createElement('span');e.textContent=t;e.className=(state.principles||[]).includes(t)?'active':'';return e}));const svg=$('network'),ns='http://www.w3.org/2000/svg',ids=['player',...Object.keys(people)],pos=Object.fromEntries(ids.map((id,i)=>id==='player'?[id,[140,90]]:[id,[140+105*Math.cos((i-1)*Math.PI/3),89+65*Math.sin((i-1)*Math.PI/3)]]));svg.replaceChildren();for(const l of state.links){if(!pos[l.from]||!pos[l.to])continue;const line=document.createElementNS(ns,'line');for(const [k,v] of Object.entries({x1:pos[l.from][0],y1:pos[l.from][1],x2:pos[l.to][0],y2:pos[l.to][1]}))line.setAttribute(k,v);svg.append(line)}for(const id of ids){const [x,y]=pos[id],active=state.links.some(l=>l.from===id||l.to===id);const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',14);if(active)c.setAttribute('class','active');svg.append(c);const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('y',y+26);t.textContent=id==='player'?'你':people[id].name;svg.append(t)}}
+}
+function townMapPosition(){
+ if(state.scene==='town')return [state.x,state.y];
+ const entry=state.entries.findLast(item=>item.scene==='town');
+ if(entry&&LUMINA_TILEMAP.canWalk(entry.x,entry.y))return [entry.x,entry.y];
+ const area=state.scene==='memory'?state.origin:state.scene;
+ const legacy=state.townReturn;
+ if(legacy?.scene===area&&LUMINA_TILEMAP.canWalk(legacy.x,legacy.y))return [legacy.x,legacy.y];
+ return townExits[area]||scenes.town.spawn;
+}
+function renderMinimap(){
+ const [x,y]=townMapPosition();
+ const direction=state.scene==='town'?facing:null;
+ const key=[x,y,direction].join(',');
+ if(key===lastMinimapKey)return;
+ lastMinimapKey=key;
+ LUMINA_TILEMAP.drawMinimap($('minimap'),x,y,direction);
+}
+function initOverview(){
+ $('overviewLandmarks').replaceChildren(...scenes.town.objects.map(([,name,,x,y])=>{
+  const label=document.createElement('span');
+  label.className='atlas-landmark';
+  label.textContent=name;
+  label.style.left=`${x}%`;
+  label.style.top=`${y}%`;
+  return label;
+ }));
+}
+function renderOverview(){
+ LUMINA_TILEMAP.drawOverview($('overviewMap'));
+ const [x,y]=townMapPosition();
+ $('overviewPlayer').style.left=`${x}%`;
+ $('overviewPlayer').style.top=`${y}%`;
+ $('overviewLocation').textContent=`你的位置 · ${scenes[state.scene].name}`;
+}
+function renderProgress(){
+ const key=[state.day,state.finished,state.energy,state.money,state.stock].join(',');
+ if(key===lastProgressKey)return;
+ lastProgressKey=key;
+ const completed=state.finished?7:state.day-1;
+ $('progressDay').textContent=state.finished?'七天已結束':`第 ${state.day} 天`;
+ $('daysCompleted').textContent=`已完成 ${completed} / 7 天`;
+ $('weekProgress').value=completed;
+ $('energyValue').textContent=`${state.energy} / 100`;
+ $('energyProgress').value=state.energy;
+ $('bagMoney').textContent=`${state.money} 元`;
+ $('bagStock').textContent=`${state.stock} 份`;
+ $('questTitle').textContent=state.finished?'七天的故事已完成':'微光咖啡館的七天';
+ const objective=state.finished?'按「查看結局」回顧這一週。':state.day===7?'按「結束今天」查看故事結局。':`按「結束今天」推進到第 ${state.day+1} 天。`;
+ if($('questObjective').textContent!==objective)$('questObjective').textContent=objective;
+}
+function renderNetwork(){const key=state.links.map(l=>`${l.from}>${l.to}:${l.id}`).join('|');if(key===lastNetworkKey)return;lastNetworkKey=key;$('linkCount').textContent=`${state.links.length} 條`;const svg=$('network'),ns='http://www.w3.org/2000/svg',ids=['player',...Object.keys(people)],pos=Object.fromEntries(ids.map((id,i)=>id==='player'?[id,[140,90]]:[id,[140+105*Math.cos((i-1)*Math.PI/3),89+65*Math.sin((i-1)*Math.PI/3)]]));svg.replaceChildren();for(const l of state.links){if(!pos[l.from]||!pos[l.to])continue;const line=document.createElementNS(ns,'line');for(const [k,v] of Object.entries({x1:pos[l.from][0],y1:pos[l.from][1],x2:pos[l.to][0],y2:pos[l.to][1]}))line.setAttribute(k,v);svg.append(line)}for(const id of ids){const [x,y]=pos[id],active=state.links.some(l=>l.from===id||l.to===id);const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',14);if(active)c.setAttribute('class','active');svg.append(c);const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('y',y+26);t.textContent=id==='player'?'你':people[id].name;svg.append(t)}}
 function enter(id){if(state.scene==='town'&&id!=='town'&&scenes[id]){state.entries.push({scene:'town',x:state.x,y:state.y,door:id});state.townReturn=null}state.scene=id;[state.x,state.y]=scenes[id].spawn;save();render()}
 function leave(){const previous=state.scene;const fallback=previous==='memory'?{scene:scenes[state.origin]?state.origin:'cafe',x:scenes[state.origin]?.spawn?.[0]??15,y:scenes[state.origin]?.spawn?.[1]??75}:{scene:'town',x:townExits[previous]?.[0]??28,y:townExits[previous]?.[1]??43};const entry=state.entries.pop()||fallback;state.scene=entry.scene;const legacy=state.scene==='town'&&state.townReturn?.scene===previous&&Number.isFinite(state.townReturn.x)&&Number.isFinite(state.townReturn.y)?[state.townReturn.x,state.townReturn.y]:null;const point=legacy&&walkable(...legacy)?legacy:walkable(entry.x,entry.y)?[entry.x,entry.y]:state.scene==='town'?(townExits[entry.door||previous]||scenes.town.spawn):scenes[state.scene].spawn;place(...point);if(state.scene==='town')state.townReturn=null;save();render()}
 function openSystem(title,text,force=false){if(endingOpen&&!force)return;captureFocus();$('eventChoices')?.remove();$('dialogChoices')?.remove();talking='system';$('dialog').classList.add('system');$('dialog').dataset.emotion='neutral';$('speaker').textContent=title;$('speakerRole').textContent='小鎮記事';$('speech').textContent=text;$('conversation').replaceChildren();$('talkForm').classList.add('hidden');$('dialogHelp').textContent='按 Esc 離開';$('dialog').classList.remove('hidden');setModal(true);$('close')?.focus?.();if(force)endingOpen=true}
@@ -68,27 +136,80 @@ async function speak(input,actionId=null){const id=talking,p=people[id];if(!p||b
     else{const action=LUMINA_NPC_ACTIONS.resolveNpcAction(state,id,'help');if(action.type==='action'){reply+=` ${action.text}${action.propagated?' 這份幫助也傳到了另一位居民。':''}`;note(`你與${people[id].name}一起「${action.title}」：${action.text}`);acted=true}else reply+=` ${action.text}`}
   }
   state.npcTalk[id]??=[];state.npcTalk[id].push({day:state.day,input:String(input).slice(0,180),reply:String(reply).slice(0,180)});state.npcTalk[id]=state.npcTalk[id].slice(-4);$('speech').textContent=reply;const line=document.createElement('p');line.textContent=`你：${input}`;$('conversation').prepend(line);finishNpcReply();markMet(id);tick(acted?0:1);save();render()}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(talking)close();return}if(talking&&e.key==='Tab'&&$('dialog').querySelectorAll){const items=[...$('dialog').querySelectorAll('button,input')].filter(el=>!el.disabled&&!el.closest('.hidden')&&!el.closest('[hidden]'));if(items.length){const first=items[0],last=items.at(-1),active=document.activeElement,inside=$('dialog').contains?.(active)??false;if(!inside){e.preventDefault();(e.shiftKey?last:first).focus()}else if(e.shiftKey&&active===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&active===last){e.preventDefault();first.focus()}}return}if(talking||['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;const k=e.key.toLowerCase();if(state.scene==='town'&&('wasd'.includes(k)||e.key.startsWith('Arrow'))){keys.add(k);e.preventDefault()}if(state.scene!=='town'&&/^[1-9]$/.test(k)){const o=objects()[Number(k)-1];if(o)interact(o)}if(k==='e'&&state.scene==='town')interact()});document.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());if(state.scene==='town')save()});
+document.addEventListener('keydown',e=>{if($('gameScreen').hidden||gameOverlayOpen())return;if(e.key==='Escape'){if(talking)close();return}if(talking&&e.key==='Tab'&&$('dialog').querySelectorAll){const items=[...$('dialog').querySelectorAll('button,input')].filter(el=>!el.disabled&&!el.closest('.hidden')&&!el.closest('[hidden]'));if(items.length){const first=items[0],last=items.at(-1),active=document.activeElement,inside=$('dialog').contains?.(active)??false;if(!inside){e.preventDefault();(e.shiftKey?last:first).focus()}else if(e.shiftKey&&active===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&active===last){e.preventDefault();first.focus()}}return}if(talking||['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;const k=e.key.toLowerCase();if(state.scene==='town'&&('wasd'.includes(k)||e.key.startsWith('Arrow'))){keys.add(k);e.preventDefault()}if(state.scene!=='town'&&/^[1-9]$/.test(k)){const o=objects()[Number(k)-1];if(o)interact(o)}if(k==='e'&&state.scene==='town')interact()});document.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());if(state.scene==='town')save()});
 window.addEventListener?.('blur',()=>{keys.clear();if(state.scene==='town')save()});
 function loop(t){
  const seconds=lastFrame?Math.min(Math.max((t-lastFrame)/1000,0),.05):0;
  lastFrame=t;
- if(state.scene==='town'&&!talking&&!state.finished&&townCanvas){
+ if(!$('gameScreen').hidden&&!gameOverlayOpen()&&state.scene==='town'&&!talking&&!state.finished&&townCanvas){
   const dx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'));
   const dy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));
+  const previousFacing=facing,wasWalking=walkingFrame>=0;
+  walkingFrame=-1;
   if(dx||dy){
    facing=Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up';
    const [x,y]=LUMINA_TILEMAP.move(state.x,state.y,dx,dy,seconds);
    if(x!==state.x||y!==state.y){
     state.x=x;state.y=y;stride+=seconds*9;walkingFrame=stride;render();
     if(t-lastSave>250){save();lastSave=t}
-   }else{walkingFrame=-1;LUMINA_TILEMAP.draw(townCanvas,state.x,state.y,facing)}
-  }else{walkingFrame=-1;LUMINA_TILEMAP.draw(townCanvas,state.x,state.y,facing)}
+   }
+  }
+  if(walkingFrame<0&&(wasWalking||facing!==previousFacing)){
+   renderTown();
+   renderMinimap();
+  }
  }
  requestAnimationFrame(loop)
 }
 requestAnimationFrame(loop);
-const mapFrame=document.createElement('div');mapFrame.id='mapFrame';$('map').before(mapFrame);mapFrame.append($('map'),$('dialog'));
-const memoryHeading=document.createElement('h2');memoryHeading.textContent='居民記憶';const memoryList=document.createElement('div');memoryList.id='npcMemories';$('links').after(memoryHeading,memoryList);
-if(new URLSearchParams(location.search).has('test')){const lab=document.createElement('section');lab.id='endingLab';const heading=document.createElement('h2');heading.textContent='結局測試預覽';const select=document.createElement('select');for(const rule of LUMINA_ENDINGS.rules){const option=document.createElement('option');option.value=rule.id;option.textContent=rule.title;select.append(option)}const button=document.createElement('button');button.textContent='預覽選取結局';button.onclick=()=>{const ending=LUMINA_ENDINGS.storyEnding(LUMINA_ENDINGS.endingTestState(select.value));openSystem(`測試預覽・${ending.title}`,`${ending.text}\n\n你留下的改變：\n${ending.impact.join('\n')}\n\n這是模擬條件，不會改動目前存檔。`)};const note=document.createElement('p');note.textContent='測試預覽不會改動存檔；實際結局仍要玩完第七天。';lab.append(heading,select,button,note);document.querySelector('aside').append(lab)}
-$('interact').onclick=()=>interact();$('rest').onclick=()=>{if(talking)return;if(state.finished)showEnding();else nextDay();render()};$('restart').onclick=()=>{if(talking)return;if(confirm('確定重新開始七天故事？目前進度會被覆蓋。')){state=fresh();keys.clear();history=[];busy=false;endingOpen=false;lastMapKey='';lastNetworkKey='';lastMemoryKey='';lastLogKey='';close();save()}};$('close').onclick=close;$('talkForm').onsubmit=e=>{e.preventDefault();const v=$('talk').value.trim();if(v){$('talk').value='';speak(v)}};render();
+if(typeof ResizeObserver!=='undefined'){
+ const mapResize=new ResizeObserver(()=>{if(townCanvas&&state.scene==='town')renderTown()});
+ mapResize.observe($('map'));
+}
+function showGame(show){
+ keys.clear();
+ walkingFrame=-1;
+ if(talking)close();
+ $('mainMenu').hidden=show;
+ $('gameScreen').hidden=!show;
+ if(show){
+  render();
+  $('sceneName').focus();
+ }else{
+  save();
+  $('startGame').focus();
+ }
+}
+$('startGame').onclick=()=>showGame(true);
+$('backToMenu').onclick=()=>showGame(false);
+$('showGuide').onclick=()=>$('howToPlay').showModal();
+function gameOverlayOpen(){return $('inventory').open||$('worldMap').open}
+function toggleGameOverlay(id){
+ if(talking||$('gameScreen').hidden)return;
+ const overlay=$(id);
+ if(overlay.open){
+  overlay.close();
+  return;
+ }
+ if(gameOverlayOpen())return;
+ keys.clear();
+ if(id==='worldMap')renderOverview();
+ else renderProgress();
+ overlay.showModal();
+}
+$('showInventory').onclick=()=>toggleGameOverlay('inventory');
+$('showWorldMap').onclick=()=>toggleGameOverlay('worldMap');
+initOverview();
+document.addEventListener('keydown',event=>{
+ const key=event.key.toLowerCase();
+ if((key!=='b'&&key!=='m')||event.repeat||event.isComposing||event.defaultPrevented
+  ||event.altKey||event.ctrlKey||event.metaKey||talking||$('gameScreen').hidden)return;
+ const target=event.target;
+ if(target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target?.tagName))return;
+ const id=key==='m'?'worldMap':'inventory';
+ if(gameOverlayOpen()&&!$(id).open)return;
+ event.preventDefault();
+ toggleGameOverlay(id);
+});
+if(new URLSearchParams(location.search).has('test')){const lab=document.createElement('section');lab.id='endingLab';const heading=document.createElement('h2');heading.textContent='結局測試預覽';const select=document.createElement('select');for(const rule of LUMINA_ENDINGS.rules){const option=document.createElement('option');option.value=rule.id;option.textContent=rule.title;select.append(option)}const button=document.createElement('button');button.textContent='預覽選取結局';button.onclick=()=>{const ending=LUMINA_ENDINGS.storyEnding(LUMINA_ENDINGS.endingTestState(select.value));openSystem(`測試預覽・${ending.title}`,`${ending.text}\n\n你留下的改變：\n${ending.impact.join('\n')}\n\n這是模擬條件，不會改動目前存檔。`)};const note=document.createElement('p');note.textContent='測試預覽不會改動存檔；實際結局仍要玩完第七天。';lab.append(heading,select,button,note);$('questDetails').append(lab)}
+$('interact').onclick=()=>interact();$('rest').onclick=()=>{if(talking)return;if(state.finished)showEnding();else nextDay();render()};$('restart').onclick=()=>{if(talking)return;if(confirm('確定重新開始七天故事？目前進度會被覆蓋。')){state=fresh();keys.clear();history=[];busy=false;endingOpen=false;lastMapKey='';lastNetworkKey=null;lastProgressKey='';close();save()}};$('close').onclick=close;$('talkForm').onsubmit=e=>{e.preventDefault();const v=$('talk').value.trim();if(v){$('talk').value='';speak(v)}};render();

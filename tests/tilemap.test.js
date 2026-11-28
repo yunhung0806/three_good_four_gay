@@ -32,3 +32,30 @@ test('movement stops at a solid tile while allowing travel along its edge', () =
   assert.equal(slideX, position[0]);
   assert.ok(slideY < y);
 });
+
+test('the camera centers the player and reveals landmarks as the player moves', () => {
+  const start = map.cameraFor(1440, 900, 28, 43);
+  const player = map.screenPoint(start, 28, 43);
+  const school = { x: 71, y: 37 };
+  assert.ok(Math.abs(player.x - 720) < 2 && Math.abs(player.y - 450) < 2);
+  assert.ok(start.width < map.width && start.height < map.height);
+  assert.ok(map.screenPoint(start, school.x, school.y).x > 1440);
+
+  const east = map.cameraFor(1440, 900, 62, 43);
+  assert.ok(east.x > start.x);
+  const visibleSchool = map.screenPoint(east, school.x, school.y);
+  assert.ok(visibleSchool.x > 0 && visibleSchool.x < 1440);
+});
+
+test('the camera stays inside the town at all four edges and in portrait view', () => {
+  for (const [viewWidth, viewHeight] of [[1440, 900], [390, 844], [2560, 720]]) {
+    const topLeft = map.cameraFor(viewWidth, viewHeight, 0, 0);
+    const bottomRight = map.cameraFor(viewWidth, viewHeight, 100, 100);
+    assert.equal(topLeft.x, 0);
+    assert.equal(topLeft.y, 0);
+    assert.equal(bottomRight.x + bottomRight.width, map.width);
+    assert.equal(bottomRight.y + bottomRight.height, map.height);
+    assert.ok(Math.abs(topLeft.width * topLeft.scale - viewWidth) < 0.01);
+    assert.ok(Math.abs(topLeft.height * topLeft.scale - viewHeight) < 0.01);
+  }
+});
