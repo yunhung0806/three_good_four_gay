@@ -302,6 +302,68 @@ test('cafe menu leaves resources unchanged when an order cannot be made',()=>{
   assert.match(ids.get('dialogHelp').textContent,/原料不足/);
 });
 
+test('grocery board, daily goods, and care package keep their progress in the save',()=>{
+  const storage=new Map(),{context,ids,elements}=boot({storage});
+  vm.runInContext("enter('shop')",context);
+  assert.equal(ids.get('shopHud').hidden,false);
+  assert.equal(ids.get('shopFeatured').textContent,'烤地瓜');
+  vm.runInContext("interact(objects().find(o=>o.id==='shelf'))",context);
+  assert.match(ids.get('speech').textContent,/鄰居的事/);
+  assert.equal(vm.runInContext('state.time',context),9);
+  vm.runInContext("close();state.energy=60;interact(objects().find(o=>o.id==='market'))",context);
+  const firstMenu=elements.filter(e=>e.id==='shopChoices').at(-1);
+  assert.equal(firstMenu.children[0].disabled,false);
+  firstMenu.children[0].onclick();
+  assert.equal(vm.runInContext('state.money',context),50);
+  assert.equal(vm.runInContext('state.energy',context),76);
+  assert.equal(vm.runInContext('state.time',context),10);
+  assert.equal(ids.get('shopFoodStatus').textContent,'已購買');
+  vm.runInContext("close();interact(objects().find(o=>o.id==='market'))",context);
+  const secondMenu=elements.filter(e=>e.id==='shopChoices').at(-1);
+  assert.equal(secondMenu.children[0].disabled,true);
+  assert.equal(secondMenu.children[1].disabled,false);
+  secondMenu.children[1].onclick();
+  assert.equal(vm.runInContext('state.money',context),42);
+  assert.equal(vm.runInContext('state.energy',context),72);
+  assert.equal(vm.runInContext('state.kindness',context),1);
+  assert.equal(vm.runInContext('state.links.at(-1).to',context),'mei');
+  assert.equal(ids.get('shopCareStatus').textContent,'已備妥');
+  const loaded=boot({storage});
+  assert.equal(vm.runInContext('state.shopFoodDays.includes(1)',loaded.context),true);
+  assert.equal(vm.runInContext('state.shopCareDays.includes(1)',loaded.context),true);
+  assert.equal(loaded.ids.get('shopHud').hidden,false);
+  vm.runInContext("openShopShelf()",loaded.context);
+  const savedMenu=loaded.elements.filter(e=>e.id==='shopChoices').at(-1);
+  assert.equal(savedMenu.children[0].disabled,true);
+  assert.equal(savedMenu.children[1].disabled,true);
+});
+
+test('grocery actions reject missing money, energy, and duplicate requests',()=>{
+  const {context,elements}=boot();
+  vm.runInContext("enter('shop');state.money=7;state.energy=100;openShopShelf()",context);
+  const poorMenu=elements.filter(e=>e.id==='shopChoices').at(-1);
+  assert.equal(poorMenu.children[0].disabled,true);
+  assert.equal(poorMenu.children[1].disabled,true);
+  assert.equal(vm.runInContext("chooseShopAction('care')",context),false);
+  assert.equal(vm.runInContext('state.time',context),9);
+  vm.runInContext("close();state.money=20;state.energy=3;openShopShelf()",context);
+  const tiredMenu=elements.filter(e=>e.id==='shopChoices').at(-1);
+  assert.equal(tiredMenu.children[1].disabled,true);
+  assert.equal(vm.runInContext("chooseShopAction('care')",context),false);
+  assert.equal(vm.runInContext('state.kindness',context),0);
+});
+test('grocery self service remains coherent while Mei visits the cafe',()=>{
+  const {context,ids,elements}=boot();
+  vm.runInContext("state.day=3;enter('shop')",context);
+  assert.equal(vm.runInContext("objects().some(o=>o.id==='mei')",context),false);
+  assert.equal(ids.get('shopOpen').textContent,'自助選物');
+  vm.runInContext("openShopShelf()",context);
+  assert.match(ids.get('speech').textContent,/投幣盒/);
+  elements.filter(e=>e.id==='shopChoices').at(-1).children[1].onclick();
+  assert.match(ids.get('speech').textContent,/照著美玲留下的清單/);
+  assert.equal(vm.runInContext('state.shopCareDays.includes(3)',context),true);
+});
+
 
 test('B toggles the backpack during play without interrupting dialogue or typing',()=>{
   const {context,ids,pressKey}=boot();

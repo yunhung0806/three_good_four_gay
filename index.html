@@ -75,6 +75,14 @@
             <div class="cafe-hud-stats"><span>原料 <b id="cafeStock"></b></span><span>本週出杯 <b id="cafeServed"></b></span></div>
             <p id="cafeStory" class="cafe-hud-story"></p>
           </section>
+          <section id="shopHud" class="shop-hud" aria-label="雜貨店今日資訊" hidden>
+            <div class="shop-hud-top"><span class="shop-hud-brand">街角雜貨店</span><span id="shopOpen" class="shop-hud-open">今日營業</span></div>
+            <p class="shop-hud-kicker">今日選物 <span id="shopDay"></span></p>
+            <strong id="shopFeatured"></strong>
+            <p id="shopFeaturedNote" class="shop-hud-note"></p>
+            <div class="shop-hud-stats"><span>點心 <b id="shopFoodStatus"></b></span><span>互助包 <b id="shopCareStatus"></b></span></div>
+            <p id="shopStory" class="shop-hud-story"></p>
+          </section>
           <div id="dialog" class="hidden" role="dialog" aria-modal="true" aria-labelledby="speaker" aria-describedby="speech">
             <div class="portrait"><div id="portraitArt"></div></div>
             <div class="dialogBody">
@@ -111,7 +119,7 @@
         <div><dt>探索小鎮</dt><dd>使用 WASD 或方向鍵移動。走近地標、人物或事件後按 E 互動。</dd></div>
         <div><dt>查看地圖</dt><dd>左上角小地圖顯示附近街區。點小地圖或按 M 開關小鎮全地圖。</dd></div>
         <div><dt>室內互動</dt><dd>點擊場景中的頭像或標記，也可以按標記上的數字。對話時可選擇回應或輸入文字，按 Esc 關閉。</dd></div>
-        <div><dt>經營與進度</dt><dd>在咖啡館用咖啡機營業、補充原料。按 B 開關背包，查看金錢和物資。點小地圖下方的任務提示可展開進度。用「結束今天」推進七天故事。</dd></div>
+        <div><dt>經營與進度</dt><dd>在咖啡館用咖啡機營業、補充原料；雜貨店可買點心補充體力，或準備互助包。按 B 開關背包，查看金錢和物資。點小地圖下方的任務提示可展開進度。用「結束今天」推進七天故事。</dd></div>
       </dl>
     </dialog>
 

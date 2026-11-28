@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id), SAVE='lumina-cafe-v2';
 const portraitPositions={ning:['0%','0%'],yu:['50%','0%'],an:['100%','0%'],mei:['0%','100%'],hao:['50%','100%'],gran:['100%','100%']};
 const people={ning:{name:'方子寧',role:'為考試煩惱的學生',scene:'school',x:68,y:45,line:'我明明一直在努力，成績卻沒有起色。',need:'鼓勵',memory:'教室裡那張滿是修改痕跡的考卷。'},yu:{name:'林雨柔',role:'麵包店店主',scene:'bakery',x:67,y:48,line:'今天麵包剩得有點多，我擔心浪費。',need:'幫忙',memory:'清晨的烤箱前，媽媽教她揉麵團。'},an:{name:'陳安',role:'公園志工',scene:'park',x:61,y:48,line:'這裡的長椅壞了，大家都不太敢坐。',need:'幫忙',memory:'小時候與父親一起修復公園長椅。'},mei:{name:'吳美玲',role:'雜貨店老闆',scene:'shop',x:69,y:48,line:'街坊最近都很忙，連打招呼的時間都少了。',need:'問候',memory:'開店第一天，鄰居送來的一束花。'},hao:{name:'許浩',role:'常來咖啡館的上班族',scene:'cafe',x:65,y:47,line:'今天又加班了。坐一會兒好嗎？',need:'傾聽',memory:'雨天車站裡，沒說出口的告別。'},gran:{name:'周奶奶',role:'鎮上的老居民',scene:'town',x:51,y:66,line:'這條街變了很多，幸好還有人願意停下來說話。',need:'陪伴',memory:'老照片裡，剛開張的微光咖啡館。'}};
-const scenes={town:{name:'微光小鎮',spawn:[28,43],objects:[['cafe','咖啡館','☕',27,37],['school','學校','📚',71,37],['bakery','麵包店','🥐',87,68],['shop','雜貨店','🏪',25,90],['park','公園','🌳',78,79]]},cafe:{name:'微光咖啡館',spawn:[15,75],objects:[['town','回到街道','🚪',10,79],['window','窗邊座位','✧',30,38],['coffee','咖啡機','☕',85,43],['stock','原料架','▤',88,75]]},school:{name:'小鎮學校',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['memory','舊考卷','📄',42,35]]},bakery:{name:'晨光麵包店',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['bread','剩餘麵包','🥖',39,38]]},shop:{name:'街角雜貨店',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['shelf','社區公告','📌',43,35]]},park:{name:'風鈴公園',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['bench','舊長椅','🪑',42,38]]},memory:{name:'人生記憶',spawn:[15,75],objects:[['back','回到現實','✨',9,78],['clue','記憶碎片','💠',60,42]]}};
+const scenes={town:{name:'微光小鎮',spawn:[28,43],objects:[['cafe','咖啡館','☕',27,37],['school','學校','📚',71,37],['bakery','麵包店','🥐',87,68],['shop','雜貨店','🏪',25,90],['park','公園','🌳',78,79]]},cafe:{name:'微光咖啡館',spawn:[15,75],objects:[['town','回到街道','🚪',10,79],['window','窗邊座位','✧',30,38],['coffee','咖啡機','☕',85,43],['stock','原料架','▤',88,75]]},school:{name:'小鎮學校',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['memory','舊考卷','📄',42,35]]},bakery:{name:'晨光麵包店',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['bread','剩餘麵包','🥖',39,38]]},shop:{name:'街角雜貨店',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['shelf','互助公告','📌',35,64],['market','日用品貨架','🧺',83,46]]},park:{name:'風鈴公園',spawn:[15,75],objects:[['town','回到街道','🚪',9,78],['bench','舊長椅','🪑',42,38]]},memory:{name:'人生記憶',spawn:[15,75],objects:[['back','回到現實','✨',9,78],['clue','記憶碎片','💠',60,42]]}};
 const CAFE_ORDERS=[
  {name:'晨光蜂蜜拿鐵',guest:'趕著開店的鄰居',line:'「今天想喝點溫柔的，好讓一天慢慢開始。」',finish:'杯緣的蜂蜜香讓鄰居放慢了腳步。'},
  {name:'雨後肉桂咖啡',guest:'等車的旅人',line:'「外面剛下過雨，能來一杯暖手的嗎？」',finish:'旅人捧著杯子，看窗上的雨痕漸漸變淡。'},
@@ -14,16 +14,26 @@ const CAFE_ORDERS=[
 ];
 const cafeOrder=day=>CAFE_ORDERS[Math.max(0,Math.min(CAFE_ORDERS.length-1,day-1))];
 const CAFE_RECIPES=[{id:'classic',name:'經典手沖',price:18,energy:14},{id:'special',name:'今日特調',price:24,energy:18}];
+const SHOP_GOODS=[
+ {name:'烤地瓜',note:'美玲把還溫熱的地瓜包在紙袋裡，留給忙到忘記吃飯的人。'},
+ {name:'鹽飯糰',note:'早晨捏好的飯糰整齊排在貨架上，旁邊寫著「路上慢慢吃」。'},
+ {name:'芝麻饅頭',note:'一掀開蒸籠，細細的芝麻香就飄到店門外。'},
+ {name:'南瓜濃湯',note:'玻璃罐裡是今天煮的濃湯，暖色像午後的陽光。'},
+ {name:'紅豆麵包',note:'雨柔送來的小麵包，讓這間店也有了清晨的香氣。'},
+ {name:'蔬菜三明治',note:'美玲把新鮮蔬菜夾好，提醒大家記得照顧自己。'},
+ {name:'桂花米糕',note:'週末的米糕放在櫃檯前，老鄰居一進門就認出香味。'}
+];
+const shopGood=day=>SHOP_GOODS[Math.max(0,Math.min(SHOP_GOODS.length-1,day-1))];
 const TOWN_INTERACTION_RADIUS=10;
 const townExits={cafe:[28,43],school:[71,40],bakery:[87,69],shop:[25,92],park:[72,76]};
 function residentSchedule(day){const home={ning:'school',an:'park',mei:'shop',gran:'town'},guests=['ning','an','mei'],guest=guests[(day-1)%guests.length],assignment={hao:'cafe',yu:'bakery',[guest]:'cafe'};for(const [id,scene] of Object.entries(home))if(id!==guest)assignment[id]=scene;return assignment}
-const fresh=()=>({day:1,time:9,money:60,energy:100,stock:3,scene:'town',x:28,y:43,kindness:0,links:[],journal:['第一天，咖啡館的門重新打開了。'],principles:[],helped:[],met:[],memoryOwner:null,memoryClues:[],origin:'cafe',entries:[],townReturn:null,finished:false,events:[],eventSerial:0,community:0,choiceSeen:[],storyFlags:{},npcMemory:{},npcTalk:{},npcActionFlags:{},npcTrust:{},storyOffer:{},coffeeServed:0,cafeSpecialDays:[],seed:(Date.now()>>>0)||0x9e3779b9,ending:null});
-function loadState(){const base=fresh();for(const key of [SAVE,'lumina-cafe-v1']){let raw;try{const value=localStorage.getItem(key);if(!value)continue;raw=JSON.parse(value)}catch{continue}if(!raw||typeof raw!=='object'||Array.isArray(raw))continue;for(const [name,example] of Object.entries(base)){const value=raw[name];if(value===undefined||value===null)continue;if(Array.isArray(example)){if(Array.isArray(value))base[name]=value.filter(item=>item!==null&&item!==undefined)}else if(typeof example==='object'){if(typeof value==='object'&&!Array.isArray(value))base[name]=value}else if(typeof value===typeof example){if(name==='scene'&&!scenes[value])continue;if(typeof example==='number'){if(!Number.isFinite(value))continue;if(name==='day'&&(!Number.isInteger(value)||value<1||value>7))continue;if(['money','energy','stock','time','community','coffeeServed'].includes(name)&&value<0)continue}base[name]=value}}break}if(!scenes[base.scene])return fresh();if(!scenes[base.origin])base.origin='cafe';base.entries=Array.isArray(base.entries)?base.entries.filter(e=>e&&scenes[e.scene]&&Number.isFinite(e.x)&&Number.isFinite(e.y)):[];if(base.ending&&(!Array.isArray(base.ending.impact)||!Array.isArray(base.ending.epilogues)))base.ending=null;base.links=base.links.filter(item=>item&&typeof item==='object');base.events=base.events.filter(item=>item&&typeof item==='object');base.principles=base.principles.filter(item=>typeof item==='string');base.helped=base.helped.filter(item=>typeof item==='string');base.met=base.met.filter(item=>typeof item==='string');base.memoryClues=base.memoryClues.filter(item=>typeof item==='string');base.cafeSpecialDays=[...new Set(base.cafeSpecialDays.filter(day=>Number.isInteger(day)&&day>=1&&day<=7))];base.journal=base.journal.map(String);return base}
+const fresh=()=>({day:1,time:9,money:60,energy:100,stock:3,scene:'town',x:28,y:43,kindness:0,links:[],journal:['第一天，咖啡館的門重新打開了。'],principles:[],helped:[],met:[],memoryOwner:null,memoryClues:[],origin:'cafe',entries:[],townReturn:null,finished:false,events:[],eventSerial:0,community:0,choiceSeen:[],storyFlags:{},npcMemory:{},npcTalk:{},npcActionFlags:{},npcTrust:{},storyOffer:{},coffeeServed:0,cafeSpecialDays:[],shopFoodDays:[],shopCareDays:[],seed:(Date.now()>>>0)||0x9e3779b9,ending:null});
+function loadState(){const base=fresh();for(const key of [SAVE,'lumina-cafe-v1']){let raw;try{const value=localStorage.getItem(key);if(!value)continue;raw=JSON.parse(value)}catch{continue}if(!raw||typeof raw!=='object'||Array.isArray(raw))continue;for(const [name,example] of Object.entries(base)){const value=raw[name];if(value===undefined||value===null)continue;if(Array.isArray(example)){if(Array.isArray(value))base[name]=value.filter(item=>item!==null&&item!==undefined)}else if(typeof example==='object'){if(typeof value==='object'&&!Array.isArray(value))base[name]=value}else if(typeof value===typeof example){if(name==='scene'&&!scenes[value])continue;if(typeof example==='number'){if(!Number.isFinite(value))continue;if(name==='day'&&(!Number.isInteger(value)||value<1||value>7))continue;if(['money','energy','stock','time','community','coffeeServed'].includes(name)&&value<0)continue}base[name]=value}}break}if(!scenes[base.scene])return fresh();if(!scenes[base.origin])base.origin='cafe';base.entries=Array.isArray(base.entries)?base.entries.filter(e=>e&&scenes[e.scene]&&Number.isFinite(e.x)&&Number.isFinite(e.y)):[];if(base.ending&&(!Array.isArray(base.ending.impact)||!Array.isArray(base.ending.epilogues)))base.ending=null;base.links=base.links.filter(item=>item&&typeof item==='object');base.events=base.events.filter(item=>item&&typeof item==='object');base.principles=base.principles.filter(item=>typeof item==='string');base.helped=base.helped.filter(item=>typeof item==='string');base.met=base.met.filter(item=>typeof item==='string');base.memoryClues=base.memoryClues.filter(item=>typeof item==='string');for(const key of ['cafeSpecialDays','shopFoodDays','shopCareDays'])base[key]=[...new Set(base[key].filter(day=>Number.isInteger(day)&&day>=1&&day<=7))];base.journal=base.journal.map(String);return base}
 let state=loadState();
 if(state.scene==='town'&&!walkable(state.x,state.y))[state.x,state.y]=scenes.town.spawn;
 function random(){let x=state.seed>>>0;if(!x)x=0x9e3779b9;x^=x<<13;x^=x>>>17;x^=x<<5;x>>>=0;state.seed=x;return x/4294967296}
 globalThis.LUMINA_RANDOM=random;
-let talking=null,keys=new Set(),lastFrame=0,lastSave=0,history=[],busy=false,endingOpen=false,returnFocus=null,lastMapKey='',mapObjectEls=[],townCanvas=null,facing='down',stride=0,walkingFrame=-1,lastNetworkKey=null,lastProgressKey='',lastMinimapKey='';
+let talking=null,keys=new Set(),lastFrame=0,lastSave=0,history=[],busy=false,endingOpen=false,shopMenuOpen=false,returnFocus=null,lastMapKey='',mapObjectEls=[],townCanvas=null,facing='down',stride=0,walkingFrame=-1,lastNetworkKey=null,lastProgressKey='',lastMinimapKey='';
 fetch('/api/config').then(r=>r.json()).then(x=>setMode(x.mode)).catch(()=>setMode('離線備援'));
 function setMode(mode){$('modeNote').textContent=mode==='AI'?'AI 對話已啟用':'離線遊玩'}
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(state))}catch{}}
@@ -35,7 +45,7 @@ function captureFocus(){const active=document.activeElement;if(active&&active!==
 function setModal(on){const list=document.querySelectorAll?.('header, .controls, aside, #map, #showWorldMap');if(list?.forEach)list.forEach(el=>{el.inert=on})}
 function restoreFocus(){const target=returnFocus;returnFocus=null;if(target&&target.isConnected!==false&&target.focus)target.focus();else if(state.scene==='town')$('interact')?.focus?.()}
 function markMet(id){if(!state.met.includes(id)){state.met.push(id);save()}}
-function objects(){let a=scenes[state.scene].objects.map(([id,name,icon,x,y])=>({id,name,icon,x,y,type:'object'}));if(state.scene==='memory'&&LUMINA_MEMORIES[state.memoryOwner]){a=a.filter(o=>o.id!=='clue');LUMINA_MEMORIES[state.memoryOwner].clues.forEach(([name],i)=>a.push({id:`clue-${i}`,name,icon:'✦',x:35+i*20,y:36+(i%2)*18,type:'object'}))}const schedule=residentSchedule(state.day),present=Object.keys(schedule).filter(id=>schedule[id]===state.scene);present.forEach((id,i)=>{const [x,y]=state.scene==='town'?[70,66]:state.scene==='cafe'?id==='hao'?[55,47]:[72,61]:[67,48];a.push({id,name:people[id].name,icon:'✦',x,y,type:'npc'})});if(state.scene!=='memory'&&!state.finished){const offered=LUMINA_STORY.storyOffer(state,state.scene,present);if(offered&&schedule[offered.owner]===state.scene)a.push({id:'scene-event',name:offered.title,icon:'✦',x:state.scene==='town'?52:state.scene==='cafe'?36:87,y:state.scene==='town'?78:state.scene==='cafe'?69:20,type:'object',eventId:offered.id})}return a}
+function objects(){let a=scenes[state.scene].objects.map(([id,name,icon,x,y])=>({id,name,icon,x,y,type:'object'}));if(state.scene==='memory'&&LUMINA_MEMORIES[state.memoryOwner]){a=a.filter(o=>o.id!=='clue');LUMINA_MEMORIES[state.memoryOwner].clues.forEach(([name],i)=>a.push({id:`clue-${i}`,name,icon:'✦',x:35+i*20,y:36+(i%2)*18,type:'object'}))}const schedule=residentSchedule(state.day),present=Object.keys(schedule).filter(id=>schedule[id]===state.scene);present.forEach((id,i)=>{const [x,y]=state.scene==='town'?[70,66]:state.scene==='cafe'?id==='hao'?[55,47]:[72,61]:state.scene==='shop'?[63,74]:[67,48];a.push({id,name:people[id].name,icon:'✦',x,y,type:'npc'})});if(state.scene!=='memory'&&!state.finished){const offered=LUMINA_STORY.storyOffer(state,state.scene,present);if(offered&&schedule[offered.owner]===state.scene)a.push({id:'scene-event',name:offered.title,icon:'✦',x:state.scene==='town'?52:state.scene==='cafe'?36:87,y:state.scene==='town'?78:state.scene==='cafe'?69:state.scene==='shop'?76:20,type:'object',eventId:offered.id})}return a}
 function nearest(list=objects()){let best=null,dist=1e9;for(const o of list){let d=Math.hypot(state.x-o.x,state.y-o.y);if(d<dist){best=o;dist=d}}return dist<(state.scene==='town'?TOWN_INTERACTION_RADIUS:16)?best:null}
 function walkable(x,y){return Number.isFinite(x)&&Number.isFinite(y)&&(state.scene==='town'?LUMINA_TILEMAP.canWalk(x,y):true)}
 function freeSpot(x,y){return walkable(x,y)}
@@ -58,6 +68,7 @@ function render(){
   $('hint').textContent=state.scene==='town'?(near?`按 E：${near.name}`:'靠近地標或人物，按 E 互動'):'點場景中的頭像或標記，或按標記上的數字互動。';$('interact').hidden=state.scene!=='town';$('rest').textContent=state.finished?'查看結局':'結束今天';$('controlText').textContent=state.scene==='town'?'WASD / 方向鍵：移動　 E：互動　 Esc：關閉對話 ':'點頭像或按數字互動　 Esc：關閉對話 ';
   renderProgress();
   renderCafeHud(list);
+  renderShopHud(list);
   renderNetwork();
   renderMinimap();
 }
@@ -71,6 +82,24 @@ function renderCafeHud(list){
  $('cafeStock').textContent=`${state.stock} 份`;
  $('cafeServed').textContent=`${state.coffeeServed||0} 杯`;
  $('cafeStory').textContent=offered?`✦ 今日故事 · ${offered.name}`:'窗邊仍為想說話的人留著位置。';
+}
+function shopNoticeText(){
+ if(state.storyFlags?.['neighbors-after']?.success)return '留言板貼滿了小紙條：借推車、分享蔬菜、替長輩帶一袋米。每張求助旁邊，都多了一句「我可以」。';
+ if(state.storyFlags?.['neighbors-after'])return '留言板已掛上，但第一張便條還沒寫完。美玲把筆留在櫃檯，等大家慢慢開口。';
+ if(state.storyFlags?.neighbors)return '美玲把排隊的規則重新寫在紙上，也留了一塊空白，讓有需要的人說出自己的難處。';
+ return '今日公告：請依序取物資；若有急需，可先告訴美玲。紙角還留著一行字：「鄰居的事，可以一起想辦法。」';
+}
+function renderShopHud(list){
+ const hud=$('shopHud');hud.hidden=state.scene!=='shop'||state.finished;
+ if(hud.hidden)return;
+ const good=shopGood(state.day),offered=list.find(o=>o.id==='scene-event');
+ $('shopOpen').textContent=residentSchedule(state.day).mei==='shop'?'今日營業':'自助選物';
+ $('shopDay').textContent=`第 ${state.day} 天`;
+ $('shopFeatured').textContent=good.name;
+ $('shopFeaturedNote').textContent=good.note;
+ $('shopFoodStatus').textContent=state.shopFoodDays.includes(state.day)?'已購買':state.energy>80?'體力充足':state.money<10?'金錢不足':'可購買';
+ $('shopCareStatus').textContent=state.shopCareDays.includes(state.day)?'已備妥':state.money<8?'金錢不足':state.energy<4?'體力不足':'待準備';
+ $('shopStory').textContent=offered?`✦ 今日故事 · ${offered.name}`:state.storyFlags?.['neighbors-after']?.success?'留言板上有了新的回應。':'讀讀互助公告，看看街坊的近況。';
 }
 function renderTown(list=objects()){
  const map=$('map');
@@ -143,16 +172,54 @@ function renderProgress(){
 function renderNetwork(){const key=state.links.map(l=>`${l.from}>${l.to}:${l.id}`).join('|');if(key===lastNetworkKey)return;lastNetworkKey=key;$('linkCount').textContent=`${state.links.length} 條`;const svg=$('network'),ns='http://www.w3.org/2000/svg',ids=['player',...Object.keys(people)],pos=Object.fromEntries(ids.map((id,i)=>id==='player'?[id,[140,90]]:[id,[140+105*Math.cos((i-1)*Math.PI/3),89+65*Math.sin((i-1)*Math.PI/3)]]));svg.replaceChildren();for(const l of state.links){if(!pos[l.from]||!pos[l.to])continue;const line=document.createElementNS(ns,'line');for(const [k,v] of Object.entries({x1:pos[l.from][0],y1:pos[l.from][1],x2:pos[l.to][0],y2:pos[l.to][1]}))line.setAttribute(k,v);svg.append(line)}for(const id of ids){const [x,y]=pos[id],active=state.links.some(l=>l.from===id||l.to===id);const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',14);if(active)c.setAttribute('class','active');svg.append(c);const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('y',y+26);t.textContent=id==='player'?'你':people[id].name;svg.append(t)}}
 function enter(id){if(state.scene==='town'&&id!=='town'&&scenes[id]){state.entries.push({scene:'town',x:state.x,y:state.y,door:id});state.townReturn=null}state.scene=id;[state.x,state.y]=scenes[id].spawn;save();render()}
 function leave(){const previous=state.scene;const fallback=previous==='memory'?{scene:scenes[state.origin]?state.origin:'cafe',x:scenes[state.origin]?.spawn?.[0]??15,y:scenes[state.origin]?.spawn?.[1]??75}:{scene:'town',x:townExits[previous]?.[0]??28,y:townExits[previous]?.[1]??43};const entry=state.entries.pop()||fallback;state.scene=entry.scene;const legacy=state.scene==='town'&&state.townReturn?.scene===previous&&Number.isFinite(state.townReturn.x)&&Number.isFinite(state.townReturn.y)?[state.townReturn.x,state.townReturn.y]:null;const point=legacy&&walkable(...legacy)?legacy:walkable(entry.x,entry.y)?[entry.x,entry.y]:state.scene==='town'?(townExits[entry.door||previous]||scenes.town.spawn):scenes[state.scene].spawn;place(...point);if(state.scene==='town')state.townReturn=null;save();render()}
-function openSystem(title,text,force=false){if(endingOpen&&!force)return;captureFocus();$('eventChoices')?.remove();$('dialogChoices')?.remove();$('cafeChoices')?.remove();talking='system';$('dialog').classList.remove('story-scene');$('dialog').classList.remove('cafe-service');$('dialog').classList.add('system');$('dialog').dataset.emotion='neutral';$('speaker').textContent=title;$('speakerRole').textContent='小鎮記事';$('speech').textContent=text;$('conversation').replaceChildren();$('talkForm').classList.add('hidden');$('dialogHelp').textContent='按 Esc 離開';$('dialog').classList.remove('hidden');setModal(true);$('close')?.focus?.();if(force)endingOpen=true}
-function openChoiceEvent(id){const event=LUMINA_STORY.storyEvent(state,id);openSystem(event.title,event.description);const isRainStory=id==='rain'||id==='rain-after';if(isRainStory){$('dialog').classList.add('story-scene');$('speakerRole').textContent=id==='rain'?'許浩的故事 · 第一幕':'許浩的故事 · 第二幕';const [x,y]=portraitPositions.hao;$('portraitArt').style.setProperty('--portrait-x',x);$('portraitArt').style.setProperty('--portrait-y',y);const chapter=document.createElement('p');chapter.className='story-chapter';chapter.textContent=`第 ${state.day} 天 · 微光咖啡館 · 目前體力 ${state.energy}`;$('conversation').append(chapter)}const panel=document.createElement('div');panel.id='eventChoices';for(const [index,[label,,cost]] of event.choices.entries()){const button=document.createElement('button');button.type='button';button.textContent=`${index+1}. ${label} · 體力 ${cost}`;button.disabled=state.energy<cost;button.onclick=()=>{try{const result=LUMINA_STORY.resolveStoryChoice(state,id,index);panel.remove();$('speech').textContent=result.text;if(isRainStory){$('dialog').dataset.emotion=result.success?'happy':result.principles.length?'sad':'neutral';const ending=document.createElement('p');ending.className='story-next';ending.textContent=id==='rain'?'隔天再來咖啡館，聽聽許浩與那封信的後續。':result.success?'那封信已經寄出；下次見到許浩，可以問他後來的心情。':'下次見到許浩，可以聽他說說信的下一步。';$('conversation').replaceChildren(ending)}$('dialogHelp').textContent='按 Esc 回到場景';note(`${result.title}：${result.text}${result.propagated?' 善意已傳向另一位居民。':''}`)}catch(error){$('speech').textContent=`目前無法選擇：${error.message||'請稍後再試'}`}};panel.append(button)}$('conversation').after(panel)}
-function openPerson(id){captureFocus();$('eventChoices')?.remove();$('dialogChoices')?.remove();$('cafeChoices')?.remove();talking=id;history=[];const p=people[id];$('dialog').classList.remove('system');$('dialog').classList.remove('story-scene');$('dialog').classList.remove('cafe-service');$('speaker').textContent=p.name;$('speakerRole').textContent=p.role;const lastTalk=state.npcTalk[id]?.at(-1);$('speech').textContent=LUMINA_STORY.npcStoryLine(state,id,p.line)+(lastTalk?`\n我也記得你上次說：「${String(lastTalk.input||'').slice(0,35)}」。`:'');$('conversation').replaceChildren();$('talkForm').classList.remove('hidden');$('dialogHelp').textContent='選擇一句話或輸入文字 · Esc 離開';$('dialog').classList.remove('hidden');$('dialog').dataset.emotion='neutral';const choices=document.createElement('div');choices.id='dialogChoices';for(const prompt of LUMINA_NPC_ACTIONS.npcActionPrompts(state,id)){const button=document.createElement('button');button.type='button';button.textContent=prompt.label;button.onclick=()=>speak(prompt.label,prompt.id);choices.append(button)}$('talkForm').before(choices);const [x,y]=portraitPositions[id];$('portraitArt').style.setProperty('--portrait-x',x);$('portraitArt').style.setProperty('--portrait-y',y);setModal(true);$('talk').focus()}
+function clearDialogSceneClasses(){for(const name of ['story-scene','shop-story','cafe-service','shop-service'])$('dialog').classList.remove(name)}
+function openSystem(title,text,force=false){if(endingOpen&&!force)return;captureFocus();$('eventChoices')?.remove();$('dialogChoices')?.remove();$('cafeChoices')?.remove();$('shopChoices')?.remove();shopMenuOpen=false;talking='system';clearDialogSceneClasses();$('dialog').classList.add('system');$('dialog').dataset.emotion='neutral';$('speaker').textContent=title;$('speakerRole').textContent='小鎮記事';$('speech').textContent=text;$('conversation').replaceChildren();$('talkForm').classList.add('hidden');$('dialogHelp').textContent='按 Esc 離開';$('dialog').classList.remove('hidden');setModal(true);$('close')?.focus?.();if(force)endingOpen=true}
+function openChoiceEvent(id){
+ const event=LUMINA_STORY.storyEvent(state,id);
+ openSystem(event.title,event.description);
+ const isRainStory=id==='rain'||id==='rain-after',isShopStory=id==='neighbors'||id==='neighbors-after';
+ if(isRainStory||isShopStory){
+  $('dialog').classList.add('story-scene');
+  if(isShopStory)$('dialog').classList.add('shop-story');
+  $('speakerRole').textContent=isRainStory?`許浩的故事 · ${id==='rain'?'第一幕':'第二幕'}`:`美玲的故事 · ${id==='neighbors'?'第一幕':'第二幕'}`;
+  const [x,y]=portraitPositions[isRainStory?'hao':'mei'];
+  $('portraitArt').style.setProperty('--portrait-x',x);
+  $('portraitArt').style.setProperty('--portrait-y',y);
+  const chapter=document.createElement('p');chapter.className='story-chapter';
+  chapter.textContent=`第 ${state.day} 天 · ${isRainStory?'微光咖啡館':'街角雜貨店'} · 目前體力 ${state.energy}`;
+  $('conversation').append(chapter);
+ }
+ const panel=document.createElement('div');panel.id='eventChoices';
+ for(const [index,[label,,cost]] of event.choices.entries()){
+  const button=document.createElement('button');button.type='button';
+  button.textContent=`${index+1}. ${label} · 體力 ${cost}`;
+  button.disabled=state.energy<cost;
+  button.onclick=()=>{
+   try{
+    const result=LUMINA_STORY.resolveStoryChoice(state,id,index);
+    panel.remove();$('speech').textContent=result.text;
+    if(isRainStory||isShopStory){
+     $('dialog').dataset.emotion=result.success?'happy':result.principles.length?'sad':'neutral';
+     const ending=document.createElement('p');ending.className='story-next';
+     ending.textContent=isRainStory?(id==='rain'?'隔天再來咖啡館，聽聽許浩與那封信的後續。':result.success?'那封信已經寄出；下次見到許浩，可以問他後來的心情。':'下次見到許浩，可以聽他說說信的下一步。'):(id==='neighbors'?'隔天再回雜貨店，看看美玲想到什麼新方法。':result.success?'互助留言板有了第一個回應；再看看店裡的公告。':'留言板仍在等第一張回應；美玲會繼續留一張空白便條。');
+     $('conversation').replaceChildren(ending);
+    }
+    $('dialogHelp').textContent='按 Esc 回到場景';
+    note(`${result.title}：${result.text}${result.propagated?' 善意已傳向另一位居民。':''}`);
+   }catch(error){$('speech').textContent=`目前無法選擇：${error.message||'請稍後再試'}`}
+  };
+  panel.append(button);
+ }
+ $('conversation').after(panel);
+}
+function openPerson(id){captureFocus();$('eventChoices')?.remove();$('dialogChoices')?.remove();$('cafeChoices')?.remove();$('shopChoices')?.remove();shopMenuOpen=false;talking=id;history=[];const p=people[id];$('dialog').classList.remove('system');clearDialogSceneClasses();$('speaker').textContent=p.name;$('speakerRole').textContent=p.role;const lastTalk=state.npcTalk[id]?.at(-1);$('speech').textContent=LUMINA_STORY.npcStoryLine(state,id,p.line)+(lastTalk?`\n我也記得你上次說：「${String(lastTalk.input||'').slice(0,35)}」。`:'');$('conversation').replaceChildren();$('talkForm').classList.remove('hidden');$('dialogHelp').textContent='選擇一句話或輸入文字 · Esc 離開';$('dialog').classList.remove('hidden');$('dialog').dataset.emotion='neutral';const choices=document.createElement('div');choices.id='dialogChoices';for(const prompt of LUMINA_NPC_ACTIONS.npcActionPrompts(state,id)){const button=document.createElement('button');button.type='button';button.textContent=prompt.label;button.onclick=()=>speak(prompt.label,prompt.id);choices.append(button)}$('talkForm').before(choices);const [x,y]=portraitPositions[id];$('portraitArt').style.setProperty('--portrait-x',x);$('portraitArt').style.setProperty('--portrait-y',y);setModal(true);$('talk').focus()}
 function finishNpcReply(){$('dialogChoices')?.classList.add('hidden');$('talkForm').classList.add('hidden');$('dialogHelp').textContent='按 Esc 離開對話';$('close')?.focus?.()}
-function close(){talking=null;endingOpen=false;setModal(false);$('dialog').classList.add('hidden');$('talk').value='';render();restoreFocus()}
+function close(){talking=null;endingOpen=false;shopMenuOpen=false;setModal(false);$('dialog').classList.add('hidden');$('talk').value='';render();restoreFocus()}
 function cafeWindowText(){
  if(state.storyFlags?.['rain-after']?.success)return '窗邊的杯墊上留著一圈淡淡的水痕。許浩已經寄出那封信，今天坐在這裡時，終於不再一直望著門口。';
  if(state.storyFlags?.rain)return '許浩曾在這裡捧著一封信，聽雨落在玻璃上。這張空椅還在，等他想說話時可以再坐下。';
  if(state.day>=5)return '窗邊的桌角放著一張河堤速寫。有人停下腳步看了很久，沒有打擾畫畫的人。';
- return '午後的光落在空椅上。這裡一直留著一個位置，讓忙了一天的人可以慢慢把話說完。';
+ return '午後的光落在窗邊的空椅上。這裡一直留著一個位置，讓忙了一天的人可以慢慢把話說完。';
 }
 function openCafeOrder(){
  const order=cafeOrder(state.day),specialDone=state.cafeSpecialDays.includes(state.day);
@@ -200,6 +267,52 @@ function serveCafeOrder(recipeId){
  save();render();
  return true;
 }
+function openShopShelf(){
+ const good=shopGood(state.day),foodDone=state.shopFoodDays.includes(state.day),careDone=state.shopCareDays.includes(state.day);
+ const meiHere=residentSchedule(state.day).mei==='shop';
+ openSystem('街角選物',`${good.note}\n\n${meiHere?'美玲把今日點心與留給鄰居的物資擺在同一個貨架上。':'美玲今天去咖啡館拜訪，留下今日點心、標價、投幣盒與互助包清單。'}`);
+ shopMenuOpen=true;
+ $('dialog').classList.add('shop-service');
+ $('speakerRole').textContent='街角雜貨店 · 日用品貨架';
+ const detail=document.createElement('p');detail.className='shop-order-detail';
+ detail.textContent=`第 ${state.day} 天 · 金錢 ${state.money} 元 · 體力 ${state.energy}`;
+ $('conversation').append(detail);
+ const panel=document.createElement('div');panel.id='shopChoices';
+ const choices=[
+  {id:'food',label:`買一份${good.name} · 10 元 / 1 小時 / 體力 +16`,disabled:foodDone||state.money<10||state.energy>80},
+  {id:'care',label:'替鄰居準備互助包 · 8 元 / 1 小時 / 體力 -4',disabled:careDone||state.money<8||state.energy<4}
+ ];
+ for(const choice of choices){const button=document.createElement('button');button.type='button';button.textContent=choice.label;button.disabled=choice.disabled;button.onclick=()=>chooseShopAction(choice.id);panel.append(button)}
+ $('conversation').after(panel);
+ $('dialogHelp').textContent=state.money<8?'金錢不足；看看公告，或先回咖啡館營業。':state.energy>80&&!careDone?'體力充足；仍可替鄰居準備互助包。':'每種行動每天各可完成一次 · Esc 離開';
+}
+function chooseShopAction(action){
+ if(!shopMenuOpen||state.scene!=='shop'||state.finished||!['food','care'].includes(action))return false;
+ const day=state.day,good=shopGood(day),food=action==='food',meiHere=residentSchedule(day).mei==='shop';
+ if(food&&(state.shopFoodDays.includes(day)||state.money<10||state.energy>80))return false;
+ if(!food&&(state.shopCareDays.includes(day)||state.money<8||state.energy<4))return false;
+ if(food){state.money-=10;state.energy+=20;state.shopFoodDays.push(day)}
+ else{
+  state.money-=8;state.shopCareDays.push(day);state.kindness++;
+  state.principles=[...new Set([...state.principles,'做好事','給人方便'])];
+  const id=`shop-care-${day}`;
+  state.links.push({from:'player',to:'mei',action:'替鄰居準備互助包',origin:id,id});
+ }
+ const text=food?`${meiHere?`你買下${good.name}，在店裡慢慢吃完。美玲把水杯推到你手邊：「先照顧好自己，才有力氣照顧別人。」`:`你把 10 元放進投幣盒，帶走${good.name}，在店裡慢慢吃完。美玲留下的紙條寫著：「也要記得照顧自己。」`}\n\n花費 10 元，體力恢復 16。`:`${meiHere?'你和美玲把米、蔬菜與一張手寫問候放進紙袋。':'你照著美玲留下的清單，把米、蔬菜與一張手寫問候放進紙袋。'}${state.storyFlags?.['neighbors-after']?.success?'留言板上很快有人寫下：「我可以幫忙送到家。」':'美玲記下需要物資的鄰居，約好親自送到門口。'}\n\n花費 8 元，體力消耗 4；這份善意留在了街角。`;
+ state.journal.unshift(`第 ${day} 天 · ${food?`在雜貨店吃了${good.name}`:'替鄰居準備互助包'}。`);
+ state.journal=state.journal.slice(0,15);
+ $('shopChoices')?.remove();shopMenuOpen=false;
+ tick();
+ if(state.finished)return true;
+ if(state.day!==day){close();return true}
+ $('speaker').textContent=food?'今日點心':'互助包已備妥';
+ $('speakerRole').textContent='街角雜貨店 · 今日紀錄';
+ $('speech').textContent=text;
+ $('conversation').replaceChildren();
+ $('dialogHelp').textContent='按 Esc 回到雜貨店';
+ save();render();
+ return true;
+}
 function interact(o=nearest()){
  if(talking||!o)return;
  if(state.finished)return showEnding();
@@ -209,6 +322,8 @@ function interact(o=nearest()){
  if(scenes[o.id]){enter(o.id);return}
  if(o.id==='coffee'){openCafeOrder();return}
  if(o.id==='window'){openSystem('窗邊座位',cafeWindowText());return}
+ if(o.id==='market'){openShopShelf();return}
+ if(o.id==='shelf'){openSystem('互助公告',shopNoticeText());return}
  if(o.id==='stock'){
   if(state.money<12)return openSystem('原料架','補充三份原料需要 12 元；目前的金錢還不夠。');
   const day=state.day;
@@ -220,7 +335,7 @@ function interact(o=nearest()){
   return;
  }
  if(o.id.startsWith('clue-')){const i=Number(o.id.slice(5)),key=`${state.memoryOwner}-${i}`,clue=LUMINA_MEMORIES[state.memoryOwner].clues[i];if(!state.memoryClues.includes(key)){state.memoryClues.push(key);note(`在「${LUMINA_MEMORIES[state.memoryOwner].title}」理解了${clue[0]}。`);openSystem(clue[0],clue[1]);tick()}else openSystem(clue[0],clue[1]);return}
- let messages={memory:'考卷上留著反覆修改的字跡。努力並非毫無痕跡。',bread:'還有剛出爐的麵包。也許能分享給需要的人。',shelf:'公告欄寫著本週的社區活動。',bench:'木板有些鬆動，修理需要時間與力氣。'};openSystem(o.name,messages[o.id]||'你停下來仔細看了看。');tick()
+ let messages={memory:'考卷上留著反覆修改的字跡。努力並非毫無痕跡。',bread:'還有剛出爐的麵包。也許能分享給需要的人。',bench:'木板有些鬆動，修理需要時間與力氣。'};openSystem(o.name,messages[o.id]||'你停下來仔細看了看。');tick()
 }
 function enterDialogueMemory(id,reply){state.memoryOwner=id;state.origin=state.scene;state.entries.push({scene:state.scene,x:state.x,y:state.y,door:'memory'});note(`${people[id].name}同意分享人生記憶。`);markMet(id);close();enter('memory');openSystem(LUMINA_MEMORIES[id].title,reply+' 探索場景裡的三件物品。')}
 function scriptedDialogue(id,input,actionId){const result=LUMINA_NPC_ACTIONS.resolveNpcAction(state,id,actionId);if(result.type==='memory'){if(LUMINA_MEMORIES[id])enterDialogueMemory(id,result.text);else{$('speech').textContent=result.text;finishNpcReply();markMet(id);save()}return}const reply=result.text+(result.propagated?' 這份幫助也傳到了另一位居民。':'');history.push({role:'user',content:input},{role:'assistant',content:reply});state.npcTalk[id]??=[];state.npcTalk[id].push({day:state.day,input:String(input).slice(0,180),reply:String(reply).slice(0,180)});state.npcTalk[id]=state.npcTalk[id].slice(-4);$('dialog').dataset.emotion=result.type==='action'?'happy':'neutral';$('speech').textContent=reply;const line=document.createElement('p');line.textContent=`你：${input}`;$('conversation').prepend(line);finishNpcReply();markMet(id);save();if(result.type==='action')note(`你與${people[id].name}一起「${result.title}」：${result.text}`);else render()}
