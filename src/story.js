@@ -5,7 +5,7 @@ const STORY_ROOTS={
  bread:{title:'剩食分享',scene:'bakery',owner:'yu',description:'雨柔看著賣不完的麵包，擔心今晚又要丟掉。你會怎麼做？',choices:[['幫她把麵包送給需要的居民',['做好事','給人歡喜'],8],['一起規劃保存與分享時間',['存好心','給人方便'],4],['讓她自己決定怎麼處理',[],0]],followup:{title:'鄰里的餐桌',description:'收到麵包的居民提議在店前擺一張分享桌。雨柔想聽你的想法。',choices:[['一起安排分享桌',['做好事','給人歡喜'],6],['先確認居民真正需要什麼',['存好心','給人方便'],3],['讓大家自行討論',[],0]]}},
  exam:{title:'考卷上的紅字',scene:'school',owner:'ning',description:'子寧收到失利的考卷，想把它藏起來。你會怎麼陪她面對？',choices:[['陪她找出不懂的題目',['給人信心','做好事'],6],['告訴她分數不等於全部的努力',['說好話','給人希望'],3],['讓她先獨處',[],0]],followup:{title:'重新寫下的答案',description:'子寧帶著修改過的考卷找你。她還是擔心再次失敗。',choices:[['陪她練習並肯定進步',['給人信心','做好事'],5],['聽她說真正害怕的事',['存好心','給人希望'],3],['尊重她自己安排',[],0]]}},
  bench:{title:'不能坐的長椅',scene:'park',owner:'an',description:'公園長椅的木板鬆了。陳安正在想怎麼讓居民安全使用。',choices:[['幫他修理並設置提醒',['做好事','給人方便'],7],['幫忙找願意協助的居民',['給人希望','給人方便'],4],['等維修人員處理',[],0]],followup:{title:'長椅旁的新朋友',description:'長椅修好後，兩位原本不熟的居民開始聊天。陳安想辦一次小聚。',choices:[['幫忙準備公園小聚',['給人歡喜','做好事'],6],['協助邀請獨居長者',['存好心','給人方便'],4],['讓聚會自然發生',[],0]]}},
- neighbors:{title:'街角的爭執',scene:'shop',owner:'mei',description:'兩位居民因排隊與物資問題起爭執，美玲正在店內安撫他們。',choices:[['先分別聽完兩人的需要',['存好心','給人方便'],5],['用溫和的話請大家冷靜',['說好話','給人歡喜'],3],['不介入爭執',[],0]],followup:{title:'重新打開的門',description:'美玲想在店門口放一塊互助留言板，讓居民更容易開口求助。',choices:[['幫忙設計並張貼留言板',['做好事','給人方便'],5],['鼓勵居民留下第一張便條',['給人信心','說好話'],3],['讓店主自行決定',[],0]]}}
+ neighbors:{title:'街角的爭執',scene:'shop',owner:'mei',description:'雜貨店的貨架前，一位居民抱著最後一袋米，另一位說自己已經排了很久。美玲站在兩人中間，放輕了聲音。\n「我們先別急，讓每個人都把話說完，好嗎？」',choices:[['先分別聽完兩人的需要',['存好心','給人方便'],5],['用溫和的話請大家冷靜',['說好話','給人歡喜'],3],['不介入爭執',[],0]],followup:{title:'重新打開的門',description:'隔天，美玲把一塊空白木板靠在店門邊，旁邊放著便條紙。\n「如果大家能把需要和能幫的事寫下來，也許就不用再為最後一袋米吵起來。」',choices:[['幫忙設計並張貼留言板',['做好事','給人方便'],5],['鼓勵居民留下第一張便條',['給人信心','說好話'],3],['讓店主自行決定',[],0]]}}
 };
 const STORY_OWNER={town:'gran',cafe:'hao',school:'ning',bakery:'yu',shop:'mei',park:'an'};
 const RAIN_OUTCOMES={
@@ -20,17 +20,65 @@ const RAIN_OUTCOMES={
   ['你把信留在許浩手邊，沒有替他決定。他把信放進外套內袋：「等我準備好了，會自己走到郵筒。」']
  ]
 };
+const SHOP_OUTCOMES={
+ neighbors:[
+  ['你先請兩人放下袋子，分別聽完：一人家裡今晚需要米，另一人擔心明天再來就買不到。美玲找出後方尚未上架的一小包，大家一起定下輪流預留的辦法。','你聽懂了兩邊的急，但最後一袋米仍不夠分。美玲先記下兩人的住址，約好明早有貨時親自送去。'],
+  ['你請兩位居民慢慢說。爭執聲停了，美玲把貨架旁的空白紙拿來，寫下「有急需，先說一聲」。有人看完，主動把位置讓給後面的人。','兩人暫時安靜下來，卻仍沒有說出真正的難處。美玲把話留到打烊後，答應明天再問問他們。'],
+  ['你站在一旁，讓美玲自己處理。店裡恢復安靜後，她在帳本角落寫下：「也許我們需要一個能開口的地方。」']
+ ],
+ 'neighbors-after':[
+  ['你和美玲把留言板釘在店門旁，分成「我需要」與「我可以」。第一張求助剛貼上，隔壁鄰居就回了一句：「米我有，晚點送去。」','木板掛好了，第一張便條卻被風吹落。美玲把它收進口袋：「沒關係，明天再邀大家寫一次。」'],
+  ['你陪美玲寫下第一張便條：「我可以幫忙搬重物。」一位路過的居民停下來，接著補上自己的名字。空白木板慢慢有了聲音。','你們邀請了幾位居民，大家還有些害羞。美玲留下筆和空白紙，說明天也會把店門打開。'],
+  ['你把決定留給美玲。她先把木板靠在門內，決定等找到願意寫第一張便條的人，再正式掛出去。']
+ ]
+};
 function rainFollowupDescription(parent){
  const first=parent?.kind===false?'上次你先回去處理店裡的事，許浩一個人在雨中離開。':parent?.success?'他記得那天有人陪著他，終於把信寫完。':'上次的雨讓事情停在半途，他仍帶著那封未寄出的信。';
  return `${first}\n${STORY_ROOTS.rain.followup.description}`;
 }
+function shopFollowupDescription(parent){
+ const first=parent?.kind===false?'昨天你讓美玲獨自處理爭執，她記下了每個人沒說出口的需要。':parent?.success?'昨天的爭執總算變成了對話，美玲想讓這份理解留得更久。':'昨天的爭執還沒完全解開，美玲想先給大家一個能開口的地方。';
+ return `${first}\n${STORY_ROOTS.neighbors.followup.description}`;
+}
 function ensureStory(state){state.storyFlags??={};state.npcMemory??={};state.storyOffer??={};state.coffeeServed??=0;state.choiceSeen??=[];for(const legacy of state.choiceSeen){const match=String(legacy).match(/^(\d+)-([a-z]+)$/),root=match&&STORY_ROOTS[match[2]];if(root&&!state.storyFlags[match[2]]){const day=Number(match[1]),id=match[2],old=state.events?.find(e=>e.day===day&&e.title===root.title),choice=old?.choice||'先前的選擇',kind=!!old?.choice&&old.choice!==root.choices[2][0];state.storyFlags[id]={day,choice,success:!!old?.success,kind,owner:root.owner};state.npcMemory[root.owner]??=[];state.npcMemory[root.owner].push({eventId:id,title:root.title,day,choice,success:!!old?.success,kind})}}return state}
 function storyDefinitions(){const all={};for(const [id,root] of Object.entries(STORY_ROOTS)){all[id]={...root,id};all[`${id}-after`]={id:`${id}-after`,title:root.followup.title,scene:root.scene,owner:root.owner,description:root.followup.description,choices:root.followup.choices,requires:id,after:true}}LUMINA_EVENTS.forEach(([title,scene,action],i)=>{if(title==='剩食分享')return;const id=`life-${i}`;all[id]={id,title,scene,owner:STORY_OWNER[scene],description:`${title}。有人正在嘗試「${action}」。你會怎麼回應？`,choices:[[`主動${action}`,['做好事','給人方便'],6],[`先詢問對方需要什麼，再協助${action}`,['存好心','說好話'],3],['暫時不介入',[],0]]};all[`${id}-after`]={id:`${id}-after`,title:`${title}的後續`,scene,owner:STORY_OWNER[scene],description:`上次「${title}」之後，居民有了新的想法。你會怎麼回應？`,choices:[[`陪對方把${action}的結果整理好`,['給人信心','做好事'],4],['聽聽這件事帶來的感受',['存好心','給人希望'],2],['讓事情自然發展',[],0]],requires:id,after:true}});return all}
-function storyEvent(state,id){const event=storyDefinitions()[id];if(!event||!event.requires)return event;const parent=state.storyFlags?.[event.requires];if(id==='rain-after')return {...event,description:rainFollowupDescription(parent)};if(parent?.success)return event;const alternate={bread:'雨柔仍在尋找適合的分享方式；鄰居提議先試辦一張小餐桌。',exam:'子寧沒有一下子找回信心，但帶著修改過的考卷來問你的想法。',bench:'長椅還不能安全使用，陳安希望和居民一起想下一步。',neighbors:'美玲仍在調解街角的誤會，想試試互助留言板。'};const description=alternate[event.requires]||`上次「${storyDefinitions()[event.requires]?.title||'事件'}」還有未解決的部分。居民想再試一次，你會怎麼做？`;return {...event,description:parent?.kind===false?`上次你讓居民自行處理。${description}`:description}}
+function storyEvent(state,id){const event=storyDefinitions()[id];if(!event||!event.requires)return event;const parent=state.storyFlags?.[event.requires];if(id==='rain-after')return {...event,description:rainFollowupDescription(parent)};if(id==='neighbors-after')return {...event,description:shopFollowupDescription(parent)};if(parent?.success)return event;const alternate={bread:'雨柔仍在尋找適合的分享方式；鄰居提議先試辦一張小餐桌。',exam:'子寧沒有一下子找回信心，但帶著修改過的考卷來問你的想法。',bench:'長椅還不能安全使用，陳安希望和居民一起想下一步。'};const description=alternate[event.requires]||`上次「${storyDefinitions()[event.requires]?.title||'事件'}」還有未解決的部分。居民想再試一次，你會怎麼做？`;return {...event,description:parent?.kind===false?`上次你讓居民自行處理。${description}`:description}}
 function eventAvailable(state,event){const flag=state.storyFlags[event.id];if(flag)return false;if(event.requires){const parent=state.storyFlags[event.requires];return !!parent&&state.day>parent.day}return true}
 function storyChoiceToday(state,scene){return (state.events||[]).some(e=>e.day===state.day&&e.scene===scene&&e.choice&&!e.npcAction)}
 function storyOffer(state,scene,presentIds=null){ensureStory(state);if(storyChoiceToday(state,scene))return null;const present=id=>!presentIds||presentIds.includes(id),all=storyDefinitions(),key=`${state.day}-${scene}`,old=all[state.storyOffer[key]];if(old&&eventAvailable(state,old)&&present(old.owner))return old;const candidates=Object.values(all).filter(e=>e.scene===scene&&eventAvailable(state,e)&&present(e.owner)),followups=candidates.filter(e=>e.after);let chosen=followups[0]||candidates.find(e=>STORY_ROOTS[e.id]);if(!chosen){const regular=candidates.filter(e=>!e.after);if(regular.length)chosen=regular[Math.floor(storyDice()*regular.length)]}state.storyOffer[key]=chosen?.id||null;return chosen||null}
-function resolveStoryChoice(state,eventId,choiceIndex,roll=storyDice(),propagationRoll=storyDice()){ensureStory(state);const event=storyDefinitions()[eventId],choice=event?.choices[choiceIndex];if(!event||!choice||event.scene!==state.scene||!eventAvailable(state,event)||storyChoiceToday(state,state.scene))throw Error('此事件目前無法選擇');const [label,principles,cost]=choice;if(state.energy<cost)throw Error('體力不足，請先休息');state.energy-=cost;state.time=Math.min(20,(state.time||9)+1);const kind=principles.length>0,success=kind&&roll<.75,recordId=`event-${++state.eventSerial}`;state.storyFlags[eventId]={day:state.day,choice:label,success,kind,owner:event.owner};state.events.push({id:recordId,title:event.title,day:state.day,scene:event.scene,success,parent:event.requires||null,choice:label,owner:event.owner});state.npcMemory[event.owner]??=[];const memory={eventId,title:event.title,day:state.day,choice:label,success,kind};state.npcMemory[event.owner].push(memory);if(kind){state.kindness++;state.principles=[...new Set([...state.principles,...principles])];state.links.push({from:'player',to:event.owner,action:label,origin:recordId,id:recordId});if(success&&propagationRoll<.7){const others=Object.keys(STORY_OWNER).map(scene=>STORY_OWNER[scene]).filter(id=>id!==event.owner),to=others[(state.day+state.eventSerial)%others.length],nextId=`event-${++state.eventSerial}`;state.links.push({from:event.owner,to,action:`${event.title}後主動互助`,origin:recordId,id:nextId});state.events.push({id:nextId,title:'居民傳遞善意',day:state.day,scene:event.scene,success:true,parent:recordId});state.community++}}delete state.storyOffer[`${state.day}-${event.scene}`];const authored=RAIN_OUTCOMES[eventId]?.[choiceIndex]?.[kind?(success?0:1):0];const text=authored?`你選擇「${label}」。\n${authored}`:!kind?`你選擇「${label}」。${event.title}沒有停在這一刻；居民會依自己的方式繼續生活。`:success?`你選擇「${label}」。事情有了進展，${event.owner==='hao'?'許浩':event.owner==='yu'?'雨柔':'居民'}記住了這份幫助。`:`你選擇「${label}」。結果沒有立刻如願，但對方記得你願意伸出手。`;return {event,title:event.title,text,success,principles,propagated:state.events.at(-1)?.parent===recordId}}
-function npcStoryLine(state,id,base){ensureStory(state);const last=state.npcMemory[id]?.at(-1);if(!last)return base;if(id==='hao'&&last.eventId==='rain')return last.success?'「雨天借傘」那天的雨很大。謝謝你陪我走過那段路。我把那封信帶回去了，還想再想想要怎麼寫。':last.kind?'「雨天借傘」那天沒能把事情說完，但你停下來陪我，我一直記得。那封信還在我口袋裡。':'「雨天借傘」那天我自己走回去了。那封信還沒寄，我正在想該說些什麼。';if(id==='hao'&&last.eventId==='rain-after')return last.success?'信已經寄出去了。郵筒關上的聲音很輕，我心裡卻鬆了一口氣。':last.kind?'信還在我這裡。謝謝你陪我走到這一步，我會再試一次。':'那封信還在我口袋裡。等我準備好了，會自己去寄。';return `我記得第 ${last.day} 天的「${last.title}」。你選擇了「${last.choice}」。${last.kind?'謝謝你願意陪我面對。':'那件事後，我也一直在想自己的下一步。'}`}
-function npcRememberedReply(state,id,input,fallback){ensureStory(state);const last=state.npcMemory[id]?.at(-1);if(!last)return fallback;if(/上次|之後|還好|記得|接下來/.test(input)){if(id==='hao'&&['rain','rain-after'].includes(last.eventId))return `我還記得「${last.title}」。${npcStoryLine(state,id,fallback)}`;return `我還記得「${last.title}」。${last.success?'事情有了些進展':'結果還不確定'}，但你當時選擇「${last.choice}」，讓我有了新的想法。`}return fallback}
+function resolveStoryChoice(state,eventId,choiceIndex,roll=storyDice(),propagationRoll=storyDice()){
+ ensureStory(state);
+ const event=storyDefinitions()[eventId],choice=event?.choices[choiceIndex];
+ if(!event||!choice||event.scene!==state.scene||!eventAvailable(state,event)||storyChoiceToday(state,state.scene))throw Error('此事件目前無法選擇');
+ const [label,principles,cost]=choice;
+ if(state.energy<cost)throw Error('體力不足，請先休息');
+ state.energy-=cost;state.time=Math.min(20,(state.time||9)+1);
+ const kind=principles.length>0,success=kind&&roll<.75,recordId=`event-${++state.eventSerial}`;
+ state.storyFlags[eventId]={day:state.day,choice:label,success,kind,owner:event.owner};
+ state.events.push({id:recordId,title:event.title,day:state.day,scene:event.scene,success,parent:event.requires||null,choice:label,owner:event.owner});
+ state.npcMemory[event.owner]??=[];
+ state.npcMemory[event.owner].push({eventId,title:event.title,day:state.day,choice:label,success,kind});
+ if(kind){
+  state.kindness++;state.principles=[...new Set([...state.principles,...principles])];
+  state.links.push({from:'player',to:event.owner,action:label,origin:recordId,id:recordId});
+  if(success&&propagationRoll<.7){
+   const others=Object.keys(STORY_OWNER).map(scene=>STORY_OWNER[scene]).filter(id=>id!==event.owner),to=others[(state.day+state.eventSerial)%others.length],nextId=`event-${++state.eventSerial}`;
+   state.links.push({from:event.owner,to,action:`${event.title}後主動互助`,origin:recordId,id:nextId});
+   state.events.push({id:nextId,title:'居民傳遞善意',day:state.day,scene:event.scene,success:true,parent:recordId});state.community++;
+  }
+ }
+ delete state.storyOffer[`${state.day}-${event.scene}`];
+ const authored=(RAIN_OUTCOMES[eventId]||SHOP_OUTCOMES[eventId])?.[choiceIndex]?.[kind?(success?0:1):0];
+ const text=authored?`你選擇「${label}」。\n${authored}`:!kind?`你選擇「${label}」。${event.title}沒有停在這一刻；居民會依自己的方式繼續生活。`:success?`你選擇「${label}」。事情有了進展，${event.owner==='hao'?'許浩':event.owner==='yu'?'雨柔':'居民'}記住了這份幫助。`:`你選擇「${label}」。結果沒有立刻如願，但對方記得你願意伸出手。`;
+ return {event,title:event.title,text,success,principles,propagated:state.events.at(-1)?.parent===recordId};
+}
+function npcStoryLine(state,id,base){
+ ensureStory(state);const last=state.npcMemory[id]?.at(-1);if(!last)return base;
+ if(id==='hao'&&last.eventId==='rain')return last.success?'「雨天借傘」那天的雨很大。謝謝你陪我走過那段路。我把那封信帶回去了，還想再想想要怎麼寫。':last.kind?'「雨天借傘」那天沒能把事情說完，但你停下來陪我，我一直記得。那封信還在我口袋裡。':'「雨天借傘」那天我自己走回去了。那封信還沒寄，我正在想該說些什麼。';
+ if(id==='hao'&&last.eventId==='rain-after')return last.success?'信已經寄出去了。郵筒關上的聲音很輕，我心裡卻鬆了一口氣。':last.kind?'信還在我這裡。謝謝你陪我走到這一步，我會再試一次。':'那封信還在我口袋裡。等我準備好了，會自己去寄。';
+ if(id==='mei'&&last.eventId==='neighbors')return last.success?'昨天那袋米的事，謝謝你陪我聽完每個人的話。我把需求記下來了，想讓大家以後更容易開口。':last.kind?'昨天的爭執還沒完全解開，但你願意停下來，我想再找他們談談。':'昨天我一個人把場面安頓下來了。後來我想，也許店裡需要一塊能讓大家留言的板子。';
+ if(id==='mei'&&last.eventId==='neighbors-after')return last.success?'你看，留言板上又多了一張便條。原來有人願意說出需要，就有人願意寫下「我可以」。':last.kind?'木板已經在門邊了，第一張便條還沒留下來。我會把筆放在這裡，慢慢等。':'我還在想留言板該怎麼掛。先讓大家知道店門一直開著，也許就夠了。';
+ return `我記得第 ${last.day} 天的「${last.title}」。你選擇了「${last.choice}」。${last.kind?'謝謝你願意陪我面對。':'那件事後，我也一直在想自己的下一步。'}`;
+}
+function npcRememberedReply(state,id,input,fallback){ensureStory(state);const last=state.npcMemory[id]?.at(-1);if(!last)return fallback;if(/上次|之後|還好|記得|接下來/.test(input)){if((id==='hao'&&['rain','rain-after'].includes(last.eventId))||(id==='mei'&&['neighbors','neighbors-after'].includes(last.eventId)))return `我還記得「${last.title}」。${npcStoryLine(state,id,fallback)}`;return `我還記得「${last.title}」。${last.success?'事情有了些進展':'結果還不確定'}，但你當時選擇「${last.choice}」，讓我有了新的想法。`}return fallback}
 window.LUMINA_STORY={ensureStory,storyDefinitions,storyEvent,storyChoiceToday,storyOffer,resolveStoryChoice,npcStoryLine,npcRememberedReply};

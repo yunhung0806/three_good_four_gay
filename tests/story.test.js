@@ -65,6 +65,31 @@ test('rain letter stays unsent after an unsuccessful attempt or a personal decis
   assert.match(story.resolveStoryChoice(other,'rain-after',2,.1,.1).text,/自己走到郵筒/);
   assert.equal(other.kindness,0);
 });
+test('grocery dispute changes the next scene, Mei dialogue, and the notice board outcome',()=>{
+  const state=fresh();state.scene='shop';
+  assert.equal(story.storyOffer(state,'shop',['mei']).id,'neighbors');
+  const dispute=story.resolveStoryChoice(state,'neighbors',0,.1,.9);
+  assert.match(dispute.text,/輪流預留的辦法/);
+  assert.match(story.npcStoryLine(state,'mei','原本台詞'),/聽完每個人的話/);
+  state.day=2;
+  assert.equal(story.storyOffer(state,'shop',['mei']).id,'neighbors-after');
+  assert.match(story.storyEvent(state,'neighbors-after').description,/變成了對話/);
+  const board=story.resolveStoryChoice(state,'neighbors-after',0,.1,.9);
+  assert.match(board.text,/我可以/);
+  assert.match(story.npcStoryLine(state,'mei','原本台詞'),/留言板上又多了一張便條/);
+  assert.equal(state.storyFlags['neighbors-after'].success,true);
+});
+test('grocery story remembers when the player leaves the dispute to Mei',()=>{
+  const state=fresh();state.scene='shop';
+  const dispute=story.resolveStoryChoice(state,'neighbors',2,.1,.9);
+  assert.match(dispute.text,/一個能開口的地方/);
+  assert.equal(state.kindness,0);
+  state.day=2;
+  assert.match(story.storyEvent(state,'neighbors-after').description,/美玲獨自處理爭執/);
+  const board=story.resolveStoryChoice(state,'neighbors-after',2,.1,.9);
+  assert.match(board.text,/找到願意寫第一張便條的人/);
+  assert.equal(state.storyFlags['neighbors-after'].success,false);
+});
 test('an event is only offered when its owner is present',()=>{
   const state=fresh();state.scene='school';
   assert.equal(story.storyOffer(state,'school',[]),null);
