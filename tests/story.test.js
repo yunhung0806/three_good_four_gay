@@ -36,6 +36,35 @@ test('free dialogue can refer back to the remembered event',()=>{
   assert.match(story.npcRememberedReply(state,'hao','上次之後你還好嗎？','一般回覆'),/雨天借傘/);
   state.day=2;assert.match(story.storyEvent(state,'rain-after').description,/未寄出的信/);
 });
+test('rain and letter tell a complete story when both actions succeed',()=>{
+  const state=fresh();
+  const rain=story.resolveStoryChoice(state,'rain',0,.1,.9);
+  assert.match(rain.text,/陪他走過積水的街角/);
+  assert.match(story.npcStoryLine(state,'hao','原本台詞'),/還想再想想要怎麼寫/);
+  state.day=2;
+  assert.match(story.storyEvent(state,'rain-after').description,/終於把信寫完/);
+  const letter=story.resolveStoryChoice(state,'rain-after',0,.1,.9);
+  assert.match(letter.text,/親手把信投入郵筒/);
+  assert.match(story.npcStoryLine(state,'hao','原本台詞'),/信已經寄出去了/);
+  assert.equal(state.storyFlags['rain-after'].success,true);
+});
+test('rain letter stays unsent after an unsuccessful attempt or a personal decision',()=>{
+  const state=fresh();
+  const rain=story.resolveStoryChoice(state,'rain',1,.9,.9);
+  assert.match(rain.text,/信仍留在他的口袋裡/);
+  state.day=2;
+  assert.match(story.storyEvent(state,'rain-after').description,/未寄出的信/);
+  const letter=story.resolveStoryChoice(state,'rain-after',1,.9,.9);
+  assert.match(letter.text,/把信還給他/);
+  assert.doesNotMatch(story.npcStoryLine(state,'hao','原本台詞'),/信已經寄出去了/);
+  assert.equal(state.storyFlags['rain-after'].success,false);
+  const other=fresh();
+  story.resolveStoryChoice(other,'rain',2,.1,.1);
+  other.day=2;
+  assert.match(story.storyEvent(other,'rain-after').description,/許浩一個人在雨中離開/);
+  assert.match(story.resolveStoryChoice(other,'rain-after',2,.1,.1).text,/自己走到郵筒/);
+  assert.equal(other.kindness,0);
+});
 test('an event is only offered when its owner is present',()=>{
   const state=fresh();state.scene='school';
   assert.equal(story.storyOffer(state,'school',[]),null);

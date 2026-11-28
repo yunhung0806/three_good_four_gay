@@ -40,6 +40,26 @@ test('game boots, shows a story marker, and records an NPC memory through the sc
   assert.equal(ids.has('journal'),false);
   assert.equal(ids.has('principles'),false);
 });
+test('rain chapter shows Xu Hao, action costs, and its next chapter',()=>{
+  const {context,ids,elements}=boot();
+  vm.runInContext("enter('cafe');globalThis.LUMINA_RANDOM=()=>.1;openChoiceEvent('rain')",context);
+  const panel=elements.find(e=>e.id==='eventChoices');
+  assert.equal(ids.get('dialog').classList.contains('story-scene'),true);
+  assert.match(ids.get('speakerRole').textContent,/許浩的故事 · 第一幕/);
+  assert.match(panel.children[0].textContent,/體力 6/);
+  panel.children[0].onclick();
+  assert.match(ids.get('speech').textContent,/陪他走過積水的街角/);
+  assert.match(ids.get('conversation').children[0].textContent,/隔天再來咖啡館/);
+  assert.equal(vm.runInContext('state.storyFlags.rain.success',context),true);
+});
+test('rain chapter disables actions the player cannot afford',()=>{
+  const {context,elements}=boot();
+  vm.runInContext("enter('cafe');state.energy=2;openChoiceEvent('rain')",context);
+  const choices=elements.find(e=>e.id==='eventChoices').children;
+  assert.equal(choices[0].disabled,true);
+  assert.equal(choices[1].disabled,true);
+  assert.equal(choices[2].disabled,false);
+});
 test('returning from a house appears where the player entered it',()=>{
   const {context}=boot();
   vm.runInContext("state.x=71;state.y=40;interact({id:'school',name:'學校',type:'object',x:71,y:37})",context);
@@ -152,6 +172,8 @@ test('the day-seven ending is not overwritten by a later action',()=>{
   const {context,ids}=boot();
   vm.runInContext("state.day=7;state.time=20;state.energy=100;state.scene='cafe';render()",context);
   vm.runInContext("interact({id:'coffee',name:'咖啡機',type:'object'})",context);
+  assert.equal(ids.get('speaker').textContent,'今日點單');
+  vm.runInContext("serveCafeOrder('classic')",context);
   assert.match(ids.get('speaker').textContent,/結局/);
   const served=vm.runInContext('state.coffeeServed',context);
   vm.runInContext("interact({id:'coffee',name:'咖啡機',type:'object'})",context);
@@ -196,12 +218,13 @@ test('merely opening a dialogue does not mark an NPC as familiar',async()=>{
   assert.equal(vm.runInContext("state.met.includes('hao')",context),true);
 });
 test('a damaged save falls back to valid state shapes',()=>{
-  const storage=new Map([['lumina-cafe-v2',JSON.stringify({scene:'cafe',events:null,links:null,kindness:'x'})]]);
+  const storage=new Map([['lumina-cafe-v2',JSON.stringify({scene:'cafe',events:null,links:null,kindness:'x',cafeSpecialDays:[1,1,'x',9]})]]);
   const {context}=boot({storage});
   assert.equal(vm.runInContext('Array.isArray(state.events)',context),true);
   assert.equal(vm.runInContext('Array.isArray(state.links)',context),true);
   assert.equal(vm.runInContext('typeof state.kindness',context),'number');
   assert.equal(vm.runInContext('typeof state.seed',context),'number');
+  assert.equal(vm.runInContext('state.cafeSpecialDays.join(",")',context),'1');
 });
 test('an out-of-range saved day falls back instead of crashing the map',()=>{
   const storage=new Map([['lumina-cafe-v2',JSON.stringify({day:0,scene:'cafe',money:-99})]]);
@@ -232,11 +255,51 @@ test('the title menu opens the guide and can resume the same game',()=>{
 test('the inventory reflects coffee sales and restocking',()=>{
   const {context,ids}=boot();
   ids.get('startGame').onclick();
-  vm.runInContext("enter('cafe');interact(objects().find(o=>o.id==='coffee'));close();interact(objects().find(o=>o.id==='stock'))",context);
+  vm.runInContext("enter('cafe');interact(objects().find(o=>o.id==='coffee'));serveCafeOrder('classic');close();interact(objects().find(o=>o.id==='stock'));close()",context);
   ids.get('showInventory').onclick();
   assert.equal(ids.get('inventory').open,true);
   assert.equal(ids.get('bagMoney').textContent,'66 元');
   assert.equal(ids.get('bagStock').textContent,'5 份');
+});
+test('cafe board, orders, and window visit form a coherent service flow',()=>{
+  const {context,ids,elements}=boot();
+  vm.runInContext("enter('cafe')",context);
+  assert.equal(ids.get('cafeHud').hidden,false);
+  assert.equal(ids.get('cafeSpecial').textContent,'晨光蜂蜜拿鐵');
+  assert.equal(ids.get('cafeStock').textContent,'3 份');
+  vm.runInContext("interact(objects().find(o=>o.id==='window'))",context);
+  assert.match(ids.get('speech').textContent,/窗邊/);
+  assert.equal(vm.runInContext('state.time',context),9);
+  vm.runInContext("close();interact(objects().find(o=>o.id==='coffee'))",context);
+  const choices=elements.find(e=>e.id==='cafeChoices');
+  assert.equal(choices.children.length,2);
+  assert.match(choices.children[1].textContent,/收入 24 元/);
+  choices.children[1].onclick();
+  assert.equal(vm.runInContext('state.money',context),84);
+  assert.equal(vm.runInContext('state.stock',context),2);
+  assert.equal(vm.runInContext('state.energy',context),82);
+  assert.equal(ids.get('cafeServed').textContent,'1 杯');
+  assert.match(ids.get('cafeSpecial').textContent,/已完成/);
+  assert.match(ids.get('speech').textContent,/蜂蜜香/);
+  vm.runInContext("close();openCafeOrder()",context);
+  const secondMenu=elements.filter(e=>e.id==='cafeChoices').at(-1);
+  assert.equal(secondMenu.children[0].disabled,false);
+  assert.equal(secondMenu.children[1].disabled,true);
+  assert.equal(vm.runInContext("serveCafeOrder('special')",context),false);
+  assert.equal(vm.runInContext('state.money',context),84);
+  vm.runInContext("close();leave()",context);
+  assert.equal(ids.get('cafeHud').hidden,true);
+});
+test('cafe menu leaves resources unchanged when an order cannot be made',()=>{
+  const {context,elements,ids}=boot();
+  vm.runInContext("enter('cafe');state.stock=0;openCafeOrder()",context);
+  const choices=elements.find(e=>e.id==='cafeChoices').children;
+  assert.equal(choices[0].disabled,true);
+  assert.equal(choices[1].disabled,true);
+  assert.equal(vm.runInContext("serveCafeOrder('classic')",context),false);
+  assert.equal(vm.runInContext('state.money',context),60);
+  assert.equal(vm.runInContext('state.coffeeServed',context),0);
+  assert.match(ids.get('dialogHelp').textContent,/原料不足/);
 });
 
 
