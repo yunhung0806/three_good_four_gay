@@ -67,6 +67,14 @@
       <section class="world" aria-labelledby="sceneName">
         <div id="mapFrame">
           <div id="map" aria-label="遊戲地圖"></div>
+          <section id="cafeHud" class="cafe-hud" aria-label="咖啡館營業資訊" hidden>
+            <div class="cafe-hud-top"><span class="cafe-hud-brand">LUMINA CAFÉ</span><span class="cafe-hud-open">營業中</span></div>
+            <p class="cafe-hud-kicker">今日點單 <span id="cafeDay"></span></p>
+            <strong id="cafeSpecial"></strong>
+            <p id="cafeGuest" class="cafe-hud-guest"></p>
+            <div class="cafe-hud-stats"><span>原料 <b id="cafeStock"></b></span><span>本週出杯 <b id="cafeServed"></b></span></div>
+            <p id="cafeStory" class="cafe-hud-story"></p>
+          </section>
           <div id="dialog" class="hidden" role="dialog" aria-modal="true" aria-labelledby="speaker" aria-describedby="speech">
             <div class="portrait"><div id="portraitArt"></div></div>
             <div class="dialogBody">
